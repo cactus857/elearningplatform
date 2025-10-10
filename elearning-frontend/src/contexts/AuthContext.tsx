@@ -10,6 +10,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { toast } from "sonner";
 
 interface AuthContextType {
   user: TUserProfileRes | null;
@@ -63,19 +64,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchUser();
   };
 
-  const logout = () => {
+  const logout = async () => {
     const refreshToken = getRefreshToken();
-    if (refreshToken) {
-      api.post("/auth/logout", { refreshToken }).catch((err) => {
-        console.error(
-          "Server logout failed, logging out client-side anyway.",
-          err
-        );
-      });
+
+    try {
+      if (refreshToken) {
+        await api.post("/auth/logout", { refreshToken });
+      }
+    } catch (error) {
+      console.error(
+        "Server-side logout failed, but proceeding with client-side cleanup.",
+        error
+      );
+    } finally {
+      clearTokens();
+      setUser(null);
+      router.push("/sign-in");
+      toast.success("Logged out successfully");
     }
-    clearTokens();
-    setUser(null);
-    router.push("/sign-in");
   };
 
   const value = { user, login, logout, isLoading };

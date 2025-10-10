@@ -118,22 +118,23 @@ export default function LoginPage() {
 
   return (
     <>
-      {" "}
-      <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
-        <div className="w-full max-w-6xl overflow-hidden rounded-xl shadow-2xl lg:grid lg:grid-cols-2 bg-white">
-          <div className="flex flex-col justify-center bg-white p-6 sm:p-12">
+      {/* Sử dụng biến màu của shadcn/ui */}
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="w-full max-w-6xl overflow-hidden rounded-xl shadow-2xl lg:grid lg:grid-cols-2 bg-card">
+          <div className="flex flex-col justify-center p-6 sm:p-12">
             <div className="w-full max-w-md">
               <div className="flex flex-col items-center justify-center">
                 <div className="mb-8">
                   <Image
                     src="/logo.svg"
-                    alt="Filuick Pay"
+                    alt="Ucademy Logo"
                     width={40}
                     height={40}
                   />
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900">Sign In</h1>
-                <p className="mt-2 text-gray-600">
+                {/* Sử dụng text-foreground và text-muted-foreground */}
+                <h1 className="text-3xl font-bold text-foreground">Sign In</h1>
+                <p className="mt-2 text-muted-foreground">
                   Welcome back! Please enter your details
                 </p>
               </div>
@@ -143,7 +144,6 @@ export default function LoginPage() {
                   onSubmit={form.handleSubmit(onSubmit)}
                   className="mt-8 space-y-6"
                 >
-                  {/* Email */}
                   <FormField
                     control={form.control}
                     name="email"
@@ -154,7 +154,7 @@ export default function LoginPage() {
                           <Input
                             placeholder="Enter your email"
                             {...field}
-                            className="h-12 rounded-lg"
+                            className="h-12 rounded-lg border-gray-200"
                           />
                         </FormControl>
                         <FormMessage />
@@ -162,7 +162,6 @@ export default function LoginPage() {
                     )}
                   />
 
-                  {/* Password */}
                   <FormField
                     control={form.control}
                     name="password"
@@ -175,13 +174,13 @@ export default function LoginPage() {
                               type={showPassword ? "text" : "password"}
                               placeholder="Enter your password"
                               {...field}
-                              className="h-12 rounded-lg pr-10"
+                              className="h-12 rounded-lg border-gray-200"
                             />
                           </FormControl>
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500"
+                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
                           >
                             {showPassword ? (
                               <EyeOff size={20} />
@@ -204,24 +203,24 @@ export default function LoginPage() {
                     </Link>
                   </div>
 
-                  {/* Submit */}
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    isLoading={isSubmitting}
-                    className="h-12 w-full rounded-lg bg-blue-600 text-base hover:bg-blue-700"
+                    className="h-12 w-full rounded-lg text-base"
                   >
+                    {isSubmitting && <LoadingSpinner />}
                     Sign in
                   </Button>
                 </form>
               </Form>
 
               <div className="my-6 flex items-center">
-                <div className="flex-grow border-t border-gray-300"></div>
-                <span className="mx-4 flex-shrink text-sm text-gray-500">
+                {/* Sử dụng border mặc định */}
+                <div className="flex-grow border-t"></div>
+                <span className="mx-4 flex-shrink text-sm text-muted-foreground">
                   OR
                 </span>
-                <div className="flex-grow border-t border-gray-300"></div>
+                <div className="flex-grow border-t"></div>
               </div>
 
               <Button variant="outline" className="h-12 w-full rounded-lg">
@@ -229,7 +228,7 @@ export default function LoginPage() {
                 Continue with Google
               </Button>
 
-              <p className="mt-8 text-center text-sm text-gray-600">
+              <p className="mt-8 text-center text-sm text-muted-foreground">
                 Don&apos;t have an account?{" "}
                 <Link
                   href="/sign-up"
@@ -241,13 +240,15 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="hidden bg-blue-600 p-12 text-white lg:flex lg:flex-col lg:items-center lg:justify-center rounded-l-xl">
+          {/* Panel bên phải với màu primary */}
+          <div className="hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col lg:items-center lg:justify-center rounded-l-xl">
             <div className="max-w-md">
               <h1 className="text-4xl font-bold leading-tight">
                 Welcome back! Level up your tech skills with{" "}
                 <span className="underline">Ucademy</span>
               </h1>
-              <p className="mt-4 text-lg text-blue-200">
+              {/* Giảm độ sáng của text phụ một chút */}
+              <p className="mt-4 text-lg opacity-80">
                 Learn coding, AI, and data analytics from industry experts.
                 Start where you left off and keep building your future — one
                 course at a time.
