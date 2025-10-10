@@ -111,15 +111,21 @@ model RefreshToken {
 
 model Course {
   id          String  @id @default(auto()) @map("_id") @db.ObjectId
+
   title       String
   description String?
   thumbnail   String?
+  duration    Int?
+  level       CourseLvel @default(BEGINNER)
+  status      CourseStatus @default(DRAFT)
+  slug        String  @unique
   category    String?
-  isPublished Boolean @default(false)
+  smallDescription String?
+  // isPublished Boolean @default(false)
 
   // Relations
   instructorId String @db.ObjectId
-  instructor   User   @relation("InstructorCourses", fields: [instructorId], references: [id])
+  instructor   User   @relation("InstructorCourses", fields: [instructorId], references: [id], onDelete: Cascade)
 
   chapters    Chapter[]
   enrollments Enrollment[]
@@ -241,4 +247,16 @@ enum HTTPMethod {
   PATCH
   OPTIONS
   HEAD
+}
+
+enum CourseLvel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }

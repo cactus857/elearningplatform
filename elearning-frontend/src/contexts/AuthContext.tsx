@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       clearTokens();
       setUser(null);
-      router.push("/sign-in");
+      router.push("/");
       toast.success("Logged out successfully");
     }
   };
