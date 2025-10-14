@@ -36,7 +36,7 @@ model User {
   totpSecret  String?     // For Two-Factor Authentication
 
   roleId String @db.ObjectId
-  role   Role   @relation(fields: [roleId], references: [id])
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   deletedAt DateTime?
   createdAt DateTime  @default(now())
@@ -52,36 +52,64 @@ model User {
   // Auditing relations
   createdCourses Course[] @relation("CreatedCourses")
   updatedCourses Course[] @relation("UpdatedCourses")
+
+  createdPermissions Permission[] @relation("CreatedPermissions")
+  updatedPermissions Permission[] @relation("UpdatedPermissions")
+  deletedPermissions Permission[] @relation("DeletedPermissions")
+
+  createdRole Role[] @relation("RoleCreatedBy")
+  updatedRole Role[] @relation("RoleUpdatedBy")
+
+  Role Role[] @relation("RoleDeletedBy")
 }
 
 model Role {
   id          String  @id @default(auto()) @map("_id") @db.ObjectId
-  name        String  @unique // e.g., "Student", "Instructor", "Admin"
-  description String?
+  name        String  @unique
+  description String  @default("")
   isActive    Boolean @default(true)
 
   users         User[]
   permissions   Permission[] @relation(fields: [permissionIds], references: [id])
   permissionIds String[]     @db.ObjectId
 
+  createdById String? @db.ObjectId
+  createdBy User? @relation("RoleCreatedBy", fields: [createdById], references: [id], onDelete:SetNull, onUpdate: NoAction)
+  updatedById String? @db.ObjectId
+  updatedBy User? @relation("RoleUpdatedBy", fields: [updatedById], references: [id], onDelete:SetNull, onUpdate: NoAction)
+  deletedById String? @db.ObjectId
+  deletedBy User? @relation("RoleDeletedBy", fields: [deletedById], references: [id], onDelete:SetNull, onUpdate: NoAction)
+
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  @@index([deletedAt])
 }
 
 model Permission {
   id          String     @id @default(auto()) @map("_id") @db.ObjectId
-  name        String // e.g., "create-course", "delete-user"
-  description String?
-  path        String // e.g., "/courses"
-  method      HTTPMethod // e.g., "POST"
+  name        String
+  description String     @default("")
+  path        String
+  method      HTTPMethod
 
   roles   Role[]   @relation(fields: [roleIds], references: [id])
   roleIds String[] @db.ObjectId
 
+  createdById String? @db.ObjectId
+  createdBy   User?   @relation("CreatedPermissions", fields: [createdById], references: [id])
+  updatedById String? @db.ObjectId
+  updatedBy   User?   @relation("UpdatedPermissions", fields: [updatedById], references: [id])
+  deletedById String? @db.ObjectId
+  deletedBy   User?   @relation("DeletedPermissions", fields: [deletedById], references: [id])
+
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  @@index([deletedAt])
+  @@unique([path, method])
 }
 
 model VerificationCode {
@@ -140,6 +168,9 @@ model Course {
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  @@index([deletedAt])
+
 }
 
 model Chapter {
@@ -156,6 +187,9 @@ model Chapter {
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  @@index([deletedAt])
+
 }
 
 model Lesson {
@@ -172,6 +206,9 @@ model Lesson {
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  @@index([deletedAt])
+
 }
 
 model Enrollment {
@@ -205,6 +242,9 @@ model Quiz {
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  @@index([deletedAt])
+
 }
 
 model Question {
