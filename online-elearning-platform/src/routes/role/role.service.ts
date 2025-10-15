@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { RoleRepository } from './role.repository'
 import { CreateRoleBodyType, GetRolesQueryType, UpdateRoleBodyType } from './role.model'
 import { RoleAlreadyExistException, RoleNotFoundException } from './role.error'
@@ -47,6 +47,8 @@ export class RoleService {
       if (isNotFoundPrismaError(error)) throw NotFoundRecordException
 
       if (isUniqueConstraintPrismaError(error)) throw RoleAlreadyExistException
+
+      if (error instanceof Error) throw new BadRequestException(error.message)
 
       throw error
     }
