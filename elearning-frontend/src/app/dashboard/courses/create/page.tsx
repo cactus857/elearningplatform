@@ -31,6 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RichTextEditor } from "@/components/rich-text-editor/Editor";
+import { Uploader } from "@/components/file-uploader/Uploader";
 
 const courseLevels = ["Beginner", "Intermediate", "Advanced"] as const;
 
@@ -198,11 +200,7 @@ function CourseCreationPage() {
                   <FormItem className="w-full">
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Description"
-                        className="min-h-[120px]"
-                        {...field}
-                      />
+                      <RichTextEditor field={field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -216,7 +214,7 @@ function CourseCreationPage() {
                   <FormItem className="w-full">
                     <FormLabel>Thumbnail Image</FormLabel>
                     <FormControl>
-                      <Input placeholder="Thumbnail url" {...field} />
+                      <Uploader />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
