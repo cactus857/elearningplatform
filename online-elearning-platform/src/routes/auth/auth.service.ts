@@ -7,9 +7,7 @@ import {
 } from '@nestjs/common'
 import { generateOTP, isNotFoundPrismaError, isUniqueConstraintPrismaError } from 'src/shared/helper'
 import { HashingService } from 'src/shared/services/hashing.service'
-import { PrismaService } from 'src/shared/services/prisma.service'
 import { TokenService } from 'src/shared/services/token.service'
-import { RolesService } from './roles.service'
 import {
   DisableTwoFactorBodyType,
   ForgotPasswordBodyType,
@@ -38,13 +36,14 @@ import {
   TOTPNotEnabledException,
 } from './error.model'
 import { TwoFactorAuthService } from 'src/shared/services/2fa.service'
+import { SharedRoleRepository } from 'src/shared/repositories/shared-role-repo'
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly hashingService: HashingService,
     private readonly authRepository: AuthRepository,
-    private readonly rolesService: RolesService,
+    private readonly sharedRoleRepository: SharedRoleRepository,
     private readonly sharedUserRepository: SharedUserRepository,
     private readonly emailService: EmailService,
     private readonly tokenService: TokenService,
@@ -84,6 +83,7 @@ export class AuthService {
     // lay thong tin user, kiem tra user co ton tai hay khong
     const user = await this.authRepository.findUniqueUserIncludeRole({
       email: body.email,
+      deletedAt: null,
     })
 
     if (!user) {
@@ -177,7 +177,7 @@ export class AuthService {
         type: TypeOfVerificationCode.REGISTER,
       })
 
-      const clientRoleId = await this.rolesService.getClientRoleId()
+      const clientRoleId = await this.sharedRoleRepository.getClientRoleId()
       const hashedPassword = await this.hashingService.hash(body.password)
 
       const [user] = await Promise.all([
@@ -207,6 +207,7 @@ export class AuthService {
   async sendOTP(body: SendOTPBodyType) {
     const user = await this.sharedUserRepository.findUnique({
       email: body.email,
+      deletedAt: null,
     })
 
     if (body.type === TypeOfVerificationCode.REGISTER && user) {
@@ -318,7 +319,7 @@ export class AuthService {
   async forgotPassword(body: ForgotPasswordBodyType) {
     const { email, newPassword, code } = body
     // kiem tra email co trong db khong
-    const user = await this.sharedUserRepository.findUnique({ email })
+    const user = await this.sharedUserRepository.findUnique({ email, deletedAt: null })
 
     if (!user) {
       throw EmailNotFoundException
@@ -334,10 +335,11 @@ export class AuthService {
     // cap nhat lai mat khau moi va xoa OTP
     const hashedPassword = await this.hashingService.hash(newPassword)
     await Promise.all([
-      this.authRepository.updateUser(
-        { id: user.id },
+      this.sharedUserRepository.update(
+        { id: user.id, deletedAt: null },
         {
           password: hashedPassword,
+          updatedById: user.id,
         },
       ),
       this.authRepository.deleteVerificationCode({
@@ -353,7 +355,7 @@ export class AuthService {
 
   async setupTwoFactorAuth(userId: string) {
     // lay thong tin user, kiem tra user co ton tai kh va xem ho bat 2fa chua
-    const user = await this.sharedUserRepository.findUnique({ id: userId })
+    const user = await this.sharedUserRepository.findUnique({ id: userId, deletedAt: null })
     if (!user) {
       throw EmailNotFoundException
     }
@@ -365,7 +367,7 @@ export class AuthService {
     // tao ra secret va uri
     const { secret, uri } = this.twoFactorService.generateTOTPSecret(user.email)
     // cap nhat secret vao user trong db
-    await this.authRepository.updateUser({ id: userId }, { totpSecret: secret })
+    await this.sharedUserRepository.update({ id: userId, deletedAt: null }, { totpSecret: secret, updatedById: userId })
     // tra ve secret va uri
     return { secret, uri }
   }
@@ -374,7 +376,7 @@ export class AuthService {
     const { userId, totpCode, code } = data
 
     // lay thong tin user, kiem tra user co ton tai khong va xem ho bat 2fa chua
-    const user = await this.sharedUserRepository.findUnique({ id: userId })
+    const user = await this.sharedUserRepository.findUnique({ id: userId, deletedAt: null })
     if (!user) {
       throw EmailNotFoundException
     }
@@ -402,7 +404,7 @@ export class AuthService {
       })
     }
     // xoa totp secret khoi user
-    await this.authRepository.updateUser({ id: userId }, { totpSecret: null })
+    await this.sharedUserRepository.update({ id: userId, deletedAt: null }, { totpSecret: null, updatedById: userId })
 
     // xoa code otp khoi db neu co
     if (code) {

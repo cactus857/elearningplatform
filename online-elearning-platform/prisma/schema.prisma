@@ -42,6 +42,10 @@ model User {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
+  createdById String? @db.ObjectId
+  updatedById String? @db.ObjectId
+  deletedById String? @db.ObjectId
+
   // Relations to other models
   coursesAsInstructor Course[]             @relation("InstructorCourses")
   enrollments         Enrollment[]

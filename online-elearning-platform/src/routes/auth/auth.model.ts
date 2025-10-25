@@ -1,6 +1,5 @@
-import { create } from 'domain'
-import { url } from 'inspector'
-import { TypeOfVerificationCode, UserStatus } from 'src/shared/constants/auth.constant'
+import { TypeOfVerificationCode } from 'src/shared/constants/auth.constant'
+import { RoleSchema } from 'src/shared/models/shared-role.model'
 import { UserSchema } from 'src/shared/models/shared-user.model'
 import { z } from 'zod'
 
@@ -98,17 +97,17 @@ export const DeviceSchema = z.object({
   isActive: z.boolean(),
 })
 
-export const RoleSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().nullable(),
-  isActive: z.boolean(),
-  createdById: z.string().nullable(),
-  updatedById: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  deletedAt: z.date().nullable(),
-})
+// export const RoleSchema = z.object({
+//   id: z.string(),
+//   name: z.string(),
+//   description: z.string().nullable(),
+//   isActive: z.boolean(),
+//   createdById: z.string().nullable(),
+//   updatedById: z.string().nullable(),
+//   createdAt: z.date(),
+//   updatedAt: z.date(),
+//   deletedAt: z.date().nullable(),
+// })
 
 export const RefreshTokenSchema = z.object({
   id: z.string(),
@@ -192,7 +191,6 @@ export type RefreshTokenType = z.infer<typeof RefreshTokenSchema>
 export type RefreshTokenBodyType = z.infer<typeof RefreshTokenBodySchema>
 export type RefreshTokenResType = LoginResType
 export type DeviceType = z.infer<typeof DeviceSchema>
-export type RoleType = z.infer<typeof RoleSchema>
 export type LogoutBodyType = RefreshTokenBodyType
 export type GoogleAuthStateType = z.infer<typeof GoogleAuthStateSchema>
 export type GetAuthorizationUrlResType = z.infer<typeof GetAuthorizationUrlResSchema>

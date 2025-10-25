@@ -10,6 +10,7 @@ import { APIKeyGuard } from './guards/api-key.guard'
 import { APP_GUARD } from '@nestjs/core'
 import { AuthenticationGuard } from './guards/authentication.guard'
 import { TwoFactorAuthService } from './services/2fa.service'
+import { SharedRoleRepository } from './repositories/shared-role-repo'
 
 const sharedService = [
   PrismaService,
@@ -18,6 +19,7 @@ const sharedService = [
   EmailService,
   TwoFactorAuthService,
   SharedUserRepository,
+  SharedRoleRepository,
 ]
 
 @Global()
