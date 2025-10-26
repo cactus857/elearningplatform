@@ -6,8 +6,8 @@ import { RoleType } from '../models/shared-role.model'
 @Injectable()
 export class SharedRoleRepository {
   private clientRoleId: string | null = null
-
   private adminRoleId: string | null = null
+  private instructorId: string | null = null
 
   constructor(private readonly prismaService: PrismaService) {}
 
@@ -19,7 +19,6 @@ export class SharedRoleRepository {
       },
     })
 
-    this.clientRoleId = role.id
     return role
   }
 
@@ -41,6 +40,16 @@ export class SharedRoleRepository {
     const role = await this.getRole(RoleName.Admin)
 
     this.adminRoleId = role.id
+    return role.id
+  }
+
+  async getInstructorRoleId() {
+    if (this.instructorId) {
+      return this.instructorId
+    }
+    const role = await this.getRole(RoleName.Instructor)
+
+    this.instructorId = role.id
     return role.id
   }
 }

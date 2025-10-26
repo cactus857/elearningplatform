@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { TokenService } from '../services/token.service'
-import { REQUEST_USER_KEY } from '../constants/auth.constant'
+import { REQUEST_ROLE_PERMISSIONS, REQUEST_USER_KEY } from '../constants/auth.constant'
 import { AccessTokenPayload } from '../types/jwt.type'
 import { PrismaService } from '../services/prisma.service'
 import { permission } from 'process'
@@ -69,5 +69,6 @@ export class AccessTokenGuard implements CanActivate {
       console.log('>>>>canAcess', canAccess)
       throw new ForbiddenException()
     }
+    request[REQUEST_ROLE_PERMISSIONS] = role
   }
 }

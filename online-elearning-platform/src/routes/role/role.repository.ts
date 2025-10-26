@@ -7,7 +7,6 @@ import {
   RoleWithPermissionsType,
   UpdateRoleBodyType,
 } from './role.model'
-import { permission } from 'process'
 import { RoleType } from 'src/shared/models/shared-role.model'
 
 @Injectable()
