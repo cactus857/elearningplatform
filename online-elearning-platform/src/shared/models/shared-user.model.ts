@@ -15,6 +15,7 @@ export const UserSchema = z.object({
   roleId: z.string(),
   createdById: z.string().nullable(),
   updatedById: z.string().nullable(),
+  deletedById: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
   deletedAt: z.date().nullable(),

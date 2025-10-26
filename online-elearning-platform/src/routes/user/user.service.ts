@@ -42,6 +42,18 @@ export class UserService {
     }
   }
 
+  private async getRoleIdByUserId(userId: string) {
+    const currentUser = await this.sharedUserRepository.findUnique({
+      id: userId,
+    })
+
+    if (!currentUser) throw NotFoundRecordException
+  }
+
+  private verifyYourself({ userAgentId, userTargetId }: { userAgentId: string; userTargetId: string }) {
+    if (userAgentId === userTargetId) throw CannotUpdateOrDeleteYourselfException
+  }
+
   list(pagination: GetUserQueryType) {
     return this.userRepository.list(pagination)
   }
@@ -49,7 +61,6 @@ export class UserService {
   async findById(id: string) {
     const user = await this.sharedUserRepository.findUniqueIncludeRolePermissions({
       id,
-      deletedAt: null,
     })
     if (!user) throw NotFoundRecordException
 
@@ -101,22 +112,15 @@ export class UserService {
     updatedByRoleName: string
   }) {
     try {
-      if (id === updatedById) throw CannotUpdateOrDeleteYourselfException
+      // khong the cap nhat chinh minh
+      this.verifyYourself({ userAgentId: updatedById, userTargetId: id })
 
-      const currentUser = await this.sharedUserRepository.findUnique({
-        id,
-        deletedAt: null,
-      })
-
-      if (!currentUser) throw NotFoundRecordException
-
-      const roleIdTarget = currentUser.roleId
+      const roleIdTarget = await this.getRoleIdByUserId(id)
       await this.verifyRole({ roleIdTarget, roleNameAgent: updatedByRoleName })
 
       const updateUser = await this.sharedUserRepository.update(
         {
           id,
-          deletedAt: null,
         },
         {
           ...data,
@@ -139,16 +143,10 @@ export class UserService {
 
   async delete({ id, deletedById, deletedByRoleName }: { id: string; deletedById: string; deletedByRoleName: string }) {
     try {
-      if (id === deletedById) throw CannotUpdateOrDeleteYourselfException
+      // khong the xoa chinh minh
+      this.verifyYourself({ userAgentId: deletedById, userTargetId: id })
 
-      const currentUser = await this.sharedUserRepository.findUnique({
-        id,
-        deletedAt: null,
-      })
-
-      if (!currentUser) throw NotFoundRecordException
-
-      const roleIdTarget = currentUser.roleId
+      const roleIdTarget = await this.getRoleIdByUserId(id)
       await this.verifyRole({ roleIdTarget, roleNameAgent: deletedByRoleName })
 
       await this.userRepository.delete({

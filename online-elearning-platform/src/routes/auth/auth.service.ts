@@ -83,7 +83,6 @@ export class AuthService {
     // lay thong tin user, kiem tra user co ton tai hay khong
     const user = await this.authRepository.findUniqueUserIncludeRole({
       email: body.email,
-      deletedAt: null,
     })
 
     if (!user) {
@@ -207,7 +206,6 @@ export class AuthService {
   async sendOTP(body: SendOTPBodyType) {
     const user = await this.sharedUserRepository.findUnique({
       email: body.email,
-      deletedAt: null,
     })
 
     if (body.type === TypeOfVerificationCode.REGISTER && user) {
@@ -319,7 +317,7 @@ export class AuthService {
   async forgotPassword(body: ForgotPasswordBodyType) {
     const { email, newPassword, code } = body
     // kiem tra email co trong db khong
-    const user = await this.sharedUserRepository.findUnique({ email, deletedAt: null })
+    const user = await this.sharedUserRepository.findUnique({ email })
 
     if (!user) {
       throw EmailNotFoundException
@@ -336,7 +334,7 @@ export class AuthService {
     const hashedPassword = await this.hashingService.hash(newPassword)
     await Promise.all([
       this.sharedUserRepository.update(
-        { id: user.id, deletedAt: null },
+        { id: user.id },
         {
           password: hashedPassword,
           updatedById: user.id,
@@ -355,7 +353,7 @@ export class AuthService {
 
   async setupTwoFactorAuth(userId: string) {
     // lay thong tin user, kiem tra user co ton tai kh va xem ho bat 2fa chua
-    const user = await this.sharedUserRepository.findUnique({ id: userId, deletedAt: null })
+    const user = await this.sharedUserRepository.findUnique({ id: userId })
     if (!user) {
       throw EmailNotFoundException
     }
@@ -367,7 +365,7 @@ export class AuthService {
     // tao ra secret va uri
     const { secret, uri } = this.twoFactorService.generateTOTPSecret(user.email)
     // cap nhat secret vao user trong db
-    await this.sharedUserRepository.update({ id: userId, deletedAt: null }, { totpSecret: secret, updatedById: userId })
+    await this.sharedUserRepository.update({ id: userId }, { totpSecret: secret, updatedById: userId })
     // tra ve secret va uri
     return { secret, uri }
   }
@@ -376,7 +374,7 @@ export class AuthService {
     const { userId, totpCode, code } = data
 
     // lay thong tin user, kiem tra user co ton tai khong va xem ho bat 2fa chua
-    const user = await this.sharedUserRepository.findUnique({ id: userId, deletedAt: null })
+    const user = await this.sharedUserRepository.findUnique({ id: userId })
     if (!user) {
       throw EmailNotFoundException
     }
@@ -404,7 +402,7 @@ export class AuthService {
       })
     }
     // xoa totp secret khoi user
-    await this.sharedUserRepository.update({ id: userId, deletedAt: null }, { totpSecret: null, updatedById: userId })
+    await this.sharedUserRepository.update({ id: userId }, { totpSecret: null, updatedById: userId })
 
     // xoa code otp khoi db neu co
     if (code) {
