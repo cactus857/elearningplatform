@@ -24,6 +24,7 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/utils/error-message";
 import { TwoFactorAuthModal } from "./TwoFactorAuthModal";
+import Logo from "@/components/shared/Logo";
 
 const formSchema = z.object({
   email: z.email({ message: "Please enter a valid email." }),
@@ -134,12 +135,7 @@ export default function LoginPage() {
             <div className="w-full max-w-md">
               <div className="flex flex-col items-center justify-center">
                 <div className="mb-8">
-                  <Image
-                    src="/logo.svg"
-                    alt="Ucademy Logo"
-                    width={40}
-                    height={40}
-                  />
+                  <Logo />
                 </div>
                 {/* Sử dụng text-foreground và text-muted-foreground */}
                 <h1 className="text-3xl font-bold text-foreground">Sign In</h1>

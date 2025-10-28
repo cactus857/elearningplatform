@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import Image from "next/image";
+import Logo from "../shared/Logo";
 
 const data = {
   navMain: [
@@ -136,13 +137,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <Link href="/">
-                <Image
-                  src={"/logo.svg"}
-                  alt="Logo"
-                  className="size-5"
-                  width={20}
-                  height={20}
-                />
+                <Logo />
+
                 <span className="text-base font-semibold">KinnLMS</span>
               </Link>
             </SidebarMenuButton>

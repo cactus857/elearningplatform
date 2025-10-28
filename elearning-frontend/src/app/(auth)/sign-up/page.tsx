@@ -1,7 +1,5 @@
-import React from "react";
+import RegisterPage from "@/components/features/auth/RegisterForm";
 
-function page() {
-  return <div>sign up</div>;
+export default function Page() {
+  return <RegisterPage />;
 }
-
-export default page;

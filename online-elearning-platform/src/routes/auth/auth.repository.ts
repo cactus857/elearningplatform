@@ -15,7 +15,10 @@ export class AuthRepository {
     user: Omit<RegisterBodyType, 'confirmPassword' | 'code'> & Pick<UserType, 'roleId'>,
   ): Promise<Omit<UserType, 'password' | 'totpSecret'>> {
     return await this.prismaService.user.create({
-      data: user,
+      data: {
+        ...user,
+        deletedAt: null,
+      },
       omit: {
         password: true,
         totpSecret: true,
