@@ -27,7 +27,10 @@ export class AuthRepository {
     user: Omit<RegisterBodyType, 'confirmPassword' | 'code'> & Pick<UserType, 'roleId' | 'avatar'>,
   ): Promise<UserType & { role: RoleType }> {
     return await this.prismaService.user.create({
-      data: user,
+      data: {
+        ...user,
+        deletedAt: null,
+      },
       include: {
         role: true,
       },

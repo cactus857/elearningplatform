@@ -3,8 +3,22 @@ import { TokenService } from '../services/token.service'
 import { REQUEST_ROLE_PERMISSIONS, REQUEST_USER_KEY } from '../constants/auth.constant'
 import { AccessTokenPayload } from '../types/jwt.type'
 import { PrismaService } from '../services/prisma.service'
-import { permission } from 'process'
 import { HTTPMethod } from '../constants/role.constants'
+
+const WHITELISTED_ROUTES = [
+  {
+    path: '/profile',
+    method: 'GET',
+  },
+  {
+    path: '/auth/me',
+    method: 'GET',
+  },
+  {
+    path: '/auth/logout',
+    method: 'POST',
+  },
+]
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
@@ -17,6 +31,17 @@ export class AccessTokenGuard implements CanActivate {
     const request = context.switchToHttp().getRequest()
     // Extract va validate token
     const decodedAccessToken = await this.extractAndValidateToken(request)
+
+    const currentPath = request.route.path
+    const currentMethod = request.method
+
+    const isWhitelisted = WHITELISTED_ROUTES.some(
+      (route) => route.path === currentPath && route.method === currentMethod,
+    )
+
+    if (isWhitelisted) {
+      return true
+    }
 
     // check user permission
     await this.validateUserPermission(decodedAccessToken, request)

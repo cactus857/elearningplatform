@@ -39,7 +39,7 @@ export default function LoginPage() {
   const [pendingCredentials, setPendingCredentials] =
     useState<LoginFormValues | null>(null);
   const router = useRouter();
-  const { login, user, isLoading } = useAuth();
+  const { login, loginWithGoogle, user, isLoading } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -55,6 +55,15 @@ export default function LoginPage() {
     }
   }, [user, router, isLoading]);
 
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle();
+    } catch (error) {
+      toast.error("Google Login Failed!", {
+        position: "top-center",
+      });
+    }
+  };
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
@@ -223,7 +232,11 @@ export default function LoginPage() {
                 <div className="flex-grow border-t"></div>
               </div>
 
-              <Button variant="outline" className="h-12 w-full rounded-lg">
+              <Button
+                variant="outline"
+                className="h-12 w-full rounded-lg"
+                onClick={handleGoogleLogin}
+              >
                 <IconGoogle />
                 Continue with Google
               </Button>

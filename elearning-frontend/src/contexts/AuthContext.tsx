@@ -15,6 +15,8 @@ import { toast } from "sonner";
 interface AuthContextType {
   user: TUserProfileRes | null;
   login: (credentials: ILoginReqBody) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  fetchUserAfterLogin: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -32,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Interceptor trong api.ts sẽ tự động đính kèm accessToken
       // và refresh nó nếu cần
-      const { data } = await api.get("/auth/me");
+      const { data } = await api.get("/profile");
       setUser(data);
     } catch (error) {
       console.error("Failed to fetch user. Token might be invalid.", error);
@@ -64,6 +66,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchUser();
   };
 
+  const fetchUserAfterLogin = async () => {
+    await fetchUser();
+  };
+
+  const loginWithGoogle = async () => {
+    try {
+      const res = await api.get("/auth/google-link");
+
+      console.log(">>>>res google", res);
+      window.location.href = res.data.url;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const logout = async () => {
     const refreshToken = getRefreshToken();
 
@@ -84,7 +101,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const value = { user, login, logout, isLoading };
+  const value = {
+    user,
+    login,
+    loginWithGoogle,
+    fetchUserAfterLogin,
+    logout,
+    isLoading,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
