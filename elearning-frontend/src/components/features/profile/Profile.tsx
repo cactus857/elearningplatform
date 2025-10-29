@@ -42,6 +42,7 @@ import { toast } from "sonner";
 import { getErrorMessage } from "@/utils/error-message";
 import { TwoFactorAuthSetupModal } from "./TwoFactorAuthSetupModal";
 import { TwoFactorAuthDisableModal } from "./TwoFactorAuthDisableModal";
+import { ChangePasswordModal } from "./ChangePasswordModal";
 
 const profileFormSchema = z.object({
   firstName: z.string().min(1, "First name is required."),
@@ -61,6 +62,8 @@ export default function ProfilePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [is2faModalOpen, setIs2faModalOpen] = useState(false);
   const [is2faDisableModalOpen, setIs2faDisableModalOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
+    useState(false);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -133,9 +136,9 @@ export default function ProfilePage() {
               <div className="flex items-center justify-center">
                 <h1 className="text-3xl font-bold">{user?.fullName}</h1>
                 {is2FAEnabled ? (
-                  <ShieldCheck className="text-blue-500  mt-1" />
+                  <ShieldCheck className="text-blue-500 ml-2 mt-1" />
                 ) : (
-                  <ShieldOff className="text-red-500  mt-1" />
+                  <ShieldOff className="text-red-500  ml-2 mt-1" />
                 )}
               </div>
 
@@ -333,7 +336,10 @@ export default function ProfilePage() {
                           Last changed 3 months ago
                         </p>
                       </div>
-                      <Button variant="secondary">
+                      <Button
+                        variant="secondary"
+                        onClick={() => setIsChangePasswordModalOpen(true)}
+                      >
                         <KeyRound className="w-4 h-4 mr-2" />
                         Change
                       </Button>
@@ -376,6 +382,11 @@ export default function ProfilePage() {
         onSuccess={() => {
           mutate?.();
         }}
+      />
+
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
       />
     </>
   );

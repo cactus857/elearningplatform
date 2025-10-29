@@ -34,6 +34,10 @@ const WHITELISTED_ROUTES = [
     path: '/auth/2fa/enable',
     method: 'POST',
   },
+  {
+    path: '/profile/change-password',
+    method: 'PUT',
+  },
 ]
 
 @Injectable()

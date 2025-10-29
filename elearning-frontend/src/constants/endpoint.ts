@@ -11,4 +11,5 @@ export const API_ENDPOINT = {
   SETUP_2FA: "/auth/2fa/setup",
   ENABLE_2FA: "/auth/2fa/enable",
   DISABLE_2FA: "/auth/2fa/disable",
+  CHANGE_PASSWORD: "/profile/change-password",
 } as const;
