@@ -8,4 +8,7 @@ export const API_ENDPOINT = {
   PROFILE: "/profile",
   UPLOAD: "/media/images/upload/presigned-url",
   UPDATE_PROFILE: "/profile",
+  SETUP_2FA: "/auth/2fa/setup",
+  ENABLE_2FA: "/auth/2fa/enable",
+  DISABLE_2FA: "/auth/2fa/disable",
 } as const;

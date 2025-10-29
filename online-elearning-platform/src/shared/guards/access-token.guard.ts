@@ -18,6 +18,22 @@ const WHITELISTED_ROUTES = [
     path: '/auth/logout',
     method: 'POST',
   },
+  {
+    path: '/auth/2fa/setup',
+    method: 'POST',
+  },
+  {
+    path: '/auth/2fa/disable',
+    method: 'POST',
+  },
+  {
+    path: '/profile',
+    method: 'PUT',
+  },
+  {
+    path: '/auth/2fa/enable',
+    method: 'POST',
+  },
 ]
 
 @Injectable()

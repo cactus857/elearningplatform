@@ -34,6 +34,8 @@ model User {
   avatar      String?
   status      UserStatus @default(INACTIVE)
   totpSecret  String?     // For Two-Factor Authentication
+  is2FAEnable Boolean? @default(false)
+  pendingTotpSecret String?
 
   roleId String @db.ObjectId
   role   Role   @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction)

@@ -33,8 +33,8 @@ export class TwoFactorAuthService {
 // const twoFactorService = new TwoFactorAuthService()
 // console.log(
 //   twoFactorService.verifyTOTP({
-//     email: 'vatcvietmy123456@gmail.com',
-//     secret: 'XRTSJAHEQS2KHAHHPVYCXCKVRSGFXOG3',
-//     token: '653828',
+//     email: 'lhoangdev@gmail.com',
+//     secret: 'JVLL2FRVPR2IAP45PY5VU6LYFFVV6LUA',
+//     token: '751211',
 //   }),
 // )

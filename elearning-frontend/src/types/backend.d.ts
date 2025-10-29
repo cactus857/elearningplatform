@@ -6,6 +6,7 @@ export interface IUser {
   avatar: string | null;
   status: "ACTIVE" | "INACTIVE";
   roleId: string;
+  is2FAEnable: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

@@ -1,9 +1,16 @@
-import { HttpException, Injectable, UnauthorizedException, UnprocessableEntityException } from '@nestjs/common'
+import {
+  BadRequestException,
+  HttpException,
+  Injectable,
+  UnauthorizedException,
+  UnprocessableEntityException,
+} from '@nestjs/common'
 import { generateOTP, isNotFoundPrismaError, isUniqueConstraintPrismaError } from 'src/shared/helper'
 import { HashingService } from 'src/shared/services/hashing.service'
 import { TokenService } from 'src/shared/services/token.service'
 import {
   DisableTwoFactorBodyType,
+  Enable2FABodyType,
   ForgotPasswordBodyType,
   LoginBodyType,
   RefreshTokenBodyType,
@@ -359,9 +366,41 @@ export class AuthService {
     // tao ra secret va uri
     const { secret, uri } = this.twoFactorService.generateTOTPSecret(user.email)
     // cap nhat secret vao user trong db
-    await this.sharedUserRepository.update({ id: userId }, { totpSecret: secret, updatedById: userId })
+    await this.sharedUserRepository.update({ id: userId }, { pendingTotpSecret: secret, updatedById: userId })
     // tra ve secret va uri
     return { secret, uri }
+  }
+
+  async enableTwoFactorAuth(data: Enable2FABodyType & { userId: string }) {
+    const { totpCode, userId } = data
+    const user = await this.sharedUserRepository.findUnique({ id: userId })
+    if (!user) {
+      throw EmailNotFoundException
+    }
+
+    const pendingSecret = user.pendingTotpSecret
+    if (!pendingSecret) {
+      throw new BadRequestException('2FA setup process not started or expired.')
+    }
+
+    const isCodeValid = this.twoFactorService.verifyTOTP({
+      email: user.email,
+      secret: pendingSecret,
+      token: totpCode,
+    })
+    if (!isCodeValid) throw InvalidTOTPException
+
+    await this.sharedUserRepository.update(
+      { id: userId },
+      {
+        totpSecret: pendingSecret,
+        is2FAEnable: true,
+        pendingTotpSecret: null,
+        updatedById: userId,
+      },
+    )
+
+    return { message: '2FA enabled successfully.' }
   }
 
   async disableTwoFactorAuth(data: DisableTwoFactorBodyType & { userId: string }) {
@@ -396,7 +435,10 @@ export class AuthService {
       })
     }
     // xoa totp secret khoi user
-    await this.sharedUserRepository.update({ id: userId }, { totpSecret: null, updatedById: userId })
+    await this.sharedUserRepository.update(
+      { id: userId },
+      { totpSecret: null, updatedById: userId, is2FAEnable: false },
+    )
 
     // xoa code otp khoi db neu co
     if (code) {

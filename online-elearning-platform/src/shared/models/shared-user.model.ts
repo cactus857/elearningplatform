@@ -12,7 +12,9 @@ export const UserSchema = z.object({
   avatar: z.string().nullable(),
   status: z.enum([UserStatus.ACTIVE, UserStatus.INACTIVE]),
   totpSecret: z.string().nullable(),
+  pendingTotpSecret: z.string().nullable(),
   roleId: z.string(),
+  is2FAEnable: z.boolean().nullable(),
   createdById: z.string().nullable(),
   updatedById: z.string().nullable(),
   deletedById: z.string().nullable(),
@@ -24,6 +26,7 @@ export const UserSchema = z.object({
 export const GetUserProfileResSchema = UserSchema.omit({
   password: true,
   totpSecret: true,
+  pendingTotpSecret: true,
 }).extend({
   role: RoleSchema.pick({
     id: true,

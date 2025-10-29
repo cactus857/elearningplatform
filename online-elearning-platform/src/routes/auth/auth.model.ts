@@ -169,6 +169,12 @@ export const DisableTwoFactorBodySchema = z
     }
   })
 
+export const Enable2FABodySchema = z
+  .object({
+    totpCode: z.string().length(6),
+  })
+  .strict()
+
 export const TwoFactorSetupResSchema = z.object({
   secret: z.string(),
   uri: z.string(),
@@ -198,3 +204,4 @@ export type ForgotPasswordBodyType = z.infer<typeof ForgotPasswordBodySchema>
 export type DisableTwoFactorBodyType = z.infer<typeof DisableTwoFactorBodySchema>
 export type TwoFactorSetupResType = z.infer<typeof TwoFactorSetupResSchema>
 export type UserProfileResType = z.infer<typeof UserProfileResSchema>
+export type Enable2FABodyType = z.infer<typeof Enable2FABodySchema>

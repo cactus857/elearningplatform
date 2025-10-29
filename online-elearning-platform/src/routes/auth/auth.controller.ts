@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Ip, Post, Query, Res } fro
 import { AuthService } from './auth.service'
 import {
   DisableTwoFactorBodyDTO,
+  EnableTwoFactorBodyDTO,
   ForgotPasswordBodyDTO,
   GetAuthorizationUrlResDTO,
   LoginBodyDTO,
@@ -116,6 +117,15 @@ export class AuthController {
   @ZodSerializerDto(TwoFactorSetupResDTO)
   setupTwoFactorAuth(@Body() _: EmptyBodyDTO, @ActiveUser('userId') userId: string) {
     return this.authService.setupTwoFactorAuth(userId)
+  }
+
+  @Post('2fa/enable')
+  @ZodSerializerDto(MessageResDTO)
+  enableTwoFactorAuth(@Body() body: EnableTwoFactorBodyDTO, @ActiveUser('userId') userId: string) {
+    return this.authService.enableTwoFactorAuth({
+      ...body,
+      userId,
+    })
   }
 
   @Post('2fa/disable')

@@ -4,7 +4,7 @@ import z from 'zod'
 
 export const GetUserResSchema = z.object({
   data: z.array(
-    UserSchema.omit({ password: true, totpSecret: true }).extend({
+    UserSchema.omit({ password: true, totpSecret: true, pendingTotpSecret: true }).extend({
       role: RoleSchema.pick({
         id: true,
         name: true,
