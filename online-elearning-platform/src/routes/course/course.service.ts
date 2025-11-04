@@ -53,7 +53,7 @@ export class CourseService {
         throw new ForbiddenException('Only instructors and admins can create courses')
       }
 
-      const slug = this.generateSlug(data.title)
+      const slug = data.slug ? data.slug : this.generateSlug(data.title)
 
       const slugExists = await this.courseRepository.checkSlugExists(slug)
       if (slugExists) throw CourseSlugExistsException

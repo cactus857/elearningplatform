@@ -14,6 +14,7 @@ import {
   IconSettings,
   IconUserCircle,
   IconUsers,
+  IconUsersGroup,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/sidebar/nav-main";
@@ -29,7 +30,6 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
-import Image from "next/image";
 import Logo from "../shared/Logo";
 
 const data = {
@@ -45,20 +45,20 @@ const data = {
       icon: IconBooks,
     },
     {
-      title: "Analytics",
-      url: "#",
-      icon: IconChartBar,
+      title: "Users",
+      url: "/dashboard/users",
+      icon: IconUsersGroup,
     },
-    {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: IconUsers,
-    },
+    // {
+    //   title: "Projects",
+    //   url: "#",
+    //   icon: IconFolder,
+    // },
+    // {
+    //   title: "Team",
+    //   url: "#",
+    //   icon: IconUsers,
+    // },
   ],
   navClouds: [
     {

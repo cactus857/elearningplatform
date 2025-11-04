@@ -1,3 +1,4 @@
+import { RoleName } from 'src/shared/constants/role.constants'
 import { RoleSchema } from 'src/shared/models/shared-role.model'
 import { UserSchema } from 'src/shared/models/shared-user.model'
 import z from 'zod'
@@ -21,6 +22,8 @@ export const GetUserQuerySchema = z
   .object({
     page: z.coerce.number().int().positive().default(1),
     limit: z.coerce.number().int().positive().default(10),
+    role: z.enum([RoleName.Admin, RoleName.Instructor, RoleName.Student]).optional(),
+    search: z.string().optional(),
   })
   .strict()
 

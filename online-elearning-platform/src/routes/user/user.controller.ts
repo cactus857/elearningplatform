@@ -24,6 +24,8 @@ export class UserController {
     return this.userService.list({
       page: query.page,
       limit: query.limit,
+      search: query.search,
+      role: query.role,
     })
   }
 

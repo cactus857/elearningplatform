@@ -57,6 +57,7 @@ export const CreateCourseBodySchema = CourseSchema.pick({
   whatYouWillLearn: true,
 })
   .extend({
+    slug: z.string().optional(),
     instructorId: z.string().optional(), // Admin có thể chỉ định instructor
   })
   .strict()
