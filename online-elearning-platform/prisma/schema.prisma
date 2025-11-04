@@ -154,12 +154,14 @@ model Course {
   description String?
   thumbnail   String?
   duration    Int?
-  level       CourseLvel @default(BEGINNER)
+  level       CourseLevel @default(BEGINNER)
   status      CourseStatus @default(DRAFT)
   slug        String  @unique
   category    String?
   smallDescription String?
   // isPublished Boolean @default(false)
+  requirements  String[]   @default([])
+  whatYouWillLearn String[] @default([])
 
   // Relations
   instructorId String @db.ObjectId
@@ -211,6 +213,7 @@ model Lesson {
   videoUrl    String?
   documentUrl String?
   transcript  String?
+  duration   Int?
 
   chapterId String  @db.ObjectId
   chapter   Chapter @relation(fields: [chapterId], references: [id])
@@ -232,6 +235,9 @@ model Enrollment {
   course   Course @relation(fields: [courseId], references: [id])
 
   enrolledAt DateTime @default(now())
+  progress    Float   @default(0) // % hoàn thành (0-100)
+  status      EnrollmentStatus @default(ACTIVE)
+  completedAt DateTime?
 
   // progress can be calculated dynamically or stored here
 
@@ -301,7 +307,7 @@ enum HTTPMethod {
   HEAD
 }
 
-enum CourseLvel {
+enum CourseLevel {
   BEGINNER
   INTERMEDIATE
   ADVANCED
@@ -312,3 +318,10 @@ enum CourseStatus {
   PUBLISHED
   ARCHIVED
 }
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+}
+
