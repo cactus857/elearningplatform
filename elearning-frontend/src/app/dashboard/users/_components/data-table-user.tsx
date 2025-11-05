@@ -266,13 +266,13 @@ export default function UsersTable() {
     const fetchUsers = async () => {
       setIsLoading(true);
       try {
-        const roleToSend = roleFilter === "ALL_ROLES" ? undefined : roleFilter;
+        // const roleToSend = roleFilter === "ALL_ROLES" ? undefined : roleFilter;
 
         const responseData = await getAllUsers(
           pagination.pageIndex + 1,
           pagination.pageSize,
           debouncedSearchQuery,
-          roleToSend
+          roleFilter
         );
         setData(responseData.data);
         setTotalItems(responseData.totalItems);
@@ -294,10 +294,8 @@ export default function UsersTable() {
   ]);
 
   useEffect(() => {
-    if (debouncedSearchQuery && pagination.pageIndex !== 0) {
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-    }
-  }, [debouncedSearchQuery, pagination.pageIndex]);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [debouncedSearchQuery]);
 
   const table = useReactTable({
     data,
@@ -331,23 +329,38 @@ export default function UsersTable() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Select
-            value={roleFilter}
-            onValueChange={setRoleFilter}
-            disabled={isLoadingRoles}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL_ROLES">All Roles</SelectItem>
-              {roles.map((role) => (
-                <SelectItem key={role.id} value={role.name}>
-                  {role.name.charAt(0) + role.name.slice(1).toLowerCase()}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select
+              value={roleFilter}
+              onValueChange={setRoleFilter}
+              disabled={isLoadingRoles}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                {/* <SelectItem value="ALL_ROLES">All Roles</SelectItem> */}
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.name}>
+                    {role.name.charAt(0) + role.name.slice(1).toLowerCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {roleFilter && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setRoleFilter("")}
+                className="text-foreground"
+              >
+                <IconTrash />
+                Clear
+              </Button>
+            )}
+          </div>
+
           <Button type="button">
             <Plus className="h-4 w-4" />
             Add user
