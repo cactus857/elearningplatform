@@ -12,6 +12,7 @@ import {
   IconHelp,
   IconSearch,
   IconSettings,
+  IconShield,
   IconUserCircle,
   IconUsers,
   IconUsersGroup,
@@ -48,6 +49,11 @@ const data = {
       title: "Users",
       url: "/dashboard/users",
       icon: IconUsersGroup,
+    },
+    {
+      title: "Roles",
+      url: "/dashboard/roles",
+      icon: IconShield,
     },
     // {
     //   title: "Projects",

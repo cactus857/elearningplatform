@@ -13,5 +13,7 @@ export const API_ENDPOINT = {
   DISABLE_2FA: "/auth/2fa/disable",
   CHANGE_PASSWORD: "/profile/change-password",
   GET_ALL_USERS: "/users",
+  CREATE_USER: "/users",
+  UPDATE_USER: "/users",
   GET_ALL_ROLES: "/roles",
 } as const;
