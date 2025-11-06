@@ -285,6 +285,10 @@ export default function UsersTable() {
   }, []);
 
   const fetchUsers = async () => {
+    if (pagination.pageIndex > 0 && roleFilter) {
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      return;
+    }
     setIsLoading(true);
     try {
       const responseData = await getAllUsers(

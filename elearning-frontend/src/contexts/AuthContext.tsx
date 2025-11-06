@@ -2,7 +2,11 @@
 import { API_ENDPOINT } from "@/constants/endpoint";
 import { ILoginReqBody, TUserProfileRes } from "@/types/backend";
 import api from "@/utils/api";
-import { clearTokens, getRefreshToken, setTokens } from "@/utils/token.service";
+import {
+  clearTokens,
+  getRefreshToken,
+  setTokens,
+} from "@/services/token.service";
 import { useRouter } from "next/navigation";
 import {
   createContext,

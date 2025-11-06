@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
-import { setTokens } from "@/utils/token.service";
+import { setTokens } from "@/services/token.service";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
 const OauthCallbackPage = () => {

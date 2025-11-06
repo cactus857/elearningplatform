@@ -1,5 +1,6 @@
 import { API_ENDPOINT } from "@/constants/endpoint";
 import api from "@/utils/api";
+import { Permissions } from "./permission.service";
 
 export interface Roles {
   id: string;
@@ -30,6 +31,10 @@ interface CreateRolePayload {
 
 type UpdateRolePayload = Partial<CreateRolePayload>;
 
+export interface RoleDetails extends Roles {
+  permissions: Permissions[];
+}
+
 export const getAllRoles = async (
   page: number,
   limit: number
@@ -40,6 +45,14 @@ export const getAllRoles = async (
       limit,
     },
   });
+  return response.data;
+};
+
+// Get role by ID
+export const getRoleById = async (id: string): Promise<RoleDetails> => {
+  const response = await api.get<RoleDetails>(
+    `${API_ENDPOINT.GET_ALL_ROLES}/${id}`
+  );
   return response.data;
 };
 
@@ -55,8 +68,8 @@ export const createRole = async (
 export const updateRole = async (
   id: string,
   payload: UpdateRolePayload
-): Promise<Roles> => {
-  const response = await api.put<Roles>(
+): Promise<RoleDetails> => {
+  const response = await api.put<RoleDetails>(
     `${API_ENDPOINT.GET_ALL_ROLES}/${id}`,
     payload
   );

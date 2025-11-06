@@ -48,7 +48,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { getAllRoles, Roles } from "@/services/role.service";
+import {
+  getAllRoles,
+  getRoleById,
+  RoleDetails,
+  Roles,
+} from "@/services/role.service";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/utils/error-message";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
@@ -72,6 +77,7 @@ import { Input } from "@/components/ui/input";
 import { useDebounce } from "use-debounce";
 import { AddRoleModal } from "./AddRoleModal";
 import { DeleteRoleDialog } from "./DeleteRoleModal";
+import { ViewRoleModal } from "./ViewRoleModal";
 
 export default function RolesTable() {
   const id = useId();
@@ -94,6 +100,9 @@ export default function RolesTable() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Roles | null>(null);
+  const [selectedRoleDetail, setSelectedRoleDetail] =
+    useState<RoleDetails | null>(null);
+  const [isLoadingRole, setIsLoadingRole] = useState(false);
 
   const columns: ColumnDef<Roles>[] = [
     {
@@ -189,7 +198,23 @@ export default function RolesTable() {
                 Copy Role ID
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-blue-400">
+              <DropdownMenuItem
+                className="text-blue-400"
+                onClick={async () => {
+                  try {
+                    setIsLoadingRole(true);
+                    const fullRole = await getRoleById(role.id);
+                    setSelectedRoleDetail(fullRole);
+                    setIsViewModalOpen(true);
+                  } catch (error) {
+                    toast.error("Failed to fetch role details", {
+                      description: getErrorMessage(error),
+                    });
+                  } finally {
+                    setIsLoadingRole(false);
+                  }
+                }}
+              >
                 <IconEye />
                 View details
               </DropdownMenuItem>
@@ -449,6 +474,15 @@ export default function RolesTable() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSuccess={handleSuccess}
+      />
+
+      <ViewRoleModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setSelectedRole(null);
+        }}
+        role={selectedRoleDetail}
       />
 
       <DeleteRoleDialog

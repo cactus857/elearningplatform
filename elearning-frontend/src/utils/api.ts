@@ -1,11 +1,10 @@
-// src/services/api.ts
 import axios from "axios";
 import {
   getAccessToken,
   getRefreshToken,
   setTokens,
   clearTokens,
-} from "./token.service";
+} from "../services/token.service";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,

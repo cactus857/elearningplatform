@@ -71,7 +71,6 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import { format } from "date-fns";
-import { useDebounce } from "use-debounce";
 import { AddPermissionModal } from "./AddPermissionModal";
 import { EditPermissionModal } from "./EditPermissionModal";
 import { ViewPermissionModal } from "./ViewPermissionModal";
@@ -89,8 +88,6 @@ export default function PermissionsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
   const [moduleFilter, setModuleFilter] = useState("");
 
   // Modal states
@@ -267,12 +264,15 @@ export default function PermissionsTable() {
   }, []);
 
   const fetchPermissions = async () => {
+    if (pagination.pageIndex > 0 && moduleFilter) {
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      return;
+    }
     setIsLoading(true);
     try {
       const responseData = await getAllPermissions(
         pagination.pageIndex + 1,
         pagination.pageSize,
-        // debouncedSearchQuery
         moduleFilter
       );
       setData(responseData.data);
@@ -289,16 +289,11 @@ export default function PermissionsTable() {
   useEffect(() => {
     fetchPermissions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    debouncedSearchQuery,
-    pagination.pageIndex,
-    pagination.pageSize,
-    moduleFilter,
-  ]);
+  }, [pagination.pageIndex, pagination.pageSize, moduleFilter]);
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedSearchQuery]);
+  }, [moduleFilter]);
 
   const table = useReactTable({
     data,
