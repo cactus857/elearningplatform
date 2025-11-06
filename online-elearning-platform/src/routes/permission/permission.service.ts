@@ -61,4 +61,8 @@ export class PermissionService {
       throw error
     }
   }
+
+  async listModules() {
+    return await this.permissionRepository.listModules()
+  }
 }

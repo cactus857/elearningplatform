@@ -2,11 +2,13 @@ import { Injectable } from '@nestjs/common'
 import { PrismaService } from 'src/shared/services/prisma.service'
 import {
   CreatePermissionBodyType,
+  GetModulesPermissionResType,
   GetPermissionQueryType,
   GetPermissionsResType,
   PermissionType,
   UpdatePermissionBodyType,
 } from './permission.model'
+import { Prisma } from '@prisma/client'
 
 @Injectable()
 export class PermissionRepository {
@@ -15,16 +17,21 @@ export class PermissionRepository {
   async list(pagination: GetPermissionQueryType): Promise<GetPermissionsResType> {
     const skip = (pagination.page - 1) * pagination.limit
     const take = pagination.limit
+    const module = pagination.module
+
+    const where: Prisma.PermissionWhereInput = {
+      deletedAt: null,
+    }
+    if (module) {
+      where.module = module
+    }
+
     const [totalItems, data] = await Promise.all([
       this.prismaService.permission.count({
-        where: {
-          deletedAt: null,
-        },
+        where,
       }),
       this.prismaService.permission.findMany({
-        where: {
-          deletedAt: null,
-        },
+        where,
         skip,
         take,
       }),
@@ -101,5 +108,20 @@ export class PermissionRepository {
             deletedById,
           },
         })
+  }
+
+  async listModules(): Promise<GetModulesPermissionResType> {
+    const modules = await this.prismaService.permission.findMany({
+      where: {
+        deletedAt: null,
+      },
+      select: {
+        module: true,
+      },
+      distinct: ['module'],
+      orderBy: { module: 'asc' },
+    })
+
+    return { data: modules.map((mod) => ({ module: mod.module })) }
   }
 }

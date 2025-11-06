@@ -9,10 +9,17 @@ export const GetPermissionsResSchema = z.object({
   limit: z.number(),
 })
 
+export const GetModulesPermissionResSchema = z
+  .object({
+    data: z.array(z.object({ module: z.string() })),
+  })
+  .strict()
+
 export const GetPermissionQuerySchema = z
   .object({
     page: z.coerce.number().int().positive().default(1),
     limit: z.coerce.number().int().positive().default(10),
+    module: z.string().optional(),
   })
   .strict()
 
@@ -40,3 +47,4 @@ export type GetPermissionDetailResType = z.infer<typeof GetPermissionDetailResSc
 export type GetPermissionsResType = z.infer<typeof GetPermissionsResSchema>
 export type CreatePermissionBodyType = z.infer<typeof CreatePermissionBodySchema>
 export type UpdatePermissionBodyType = z.infer<typeof UpdatePermissionBodySchema>
+export type GetModulesPermissionResType = z.infer<typeof GetModulesPermissionResSchema>

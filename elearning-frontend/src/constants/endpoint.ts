@@ -16,4 +16,5 @@ export const API_ENDPOINT = {
   CREATE_USER: "/users",
   UPDATE_USER: "/users",
   GET_ALL_ROLES: "/roles",
+  GET_ALL_PERMISSIONS: "/permissions",
 } as const;

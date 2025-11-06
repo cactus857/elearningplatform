@@ -3,6 +3,7 @@ import { PermissionService } from './permission.service'
 import { ZodSerializerDto } from 'nestjs-zod'
 import {
   CreatePermissionBodyDTO,
+  GetModulesPermissionResDTO,
   GetPermissionDetailResDTO,
   GetPermissionParamsDTO,
   GetPermissionQueryDTO,
@@ -20,6 +21,12 @@ export class PermissionController {
   @ZodSerializerDto(GetPermissionResDTO)
   list(@Query() query: GetPermissionQueryDTO) {
     return this.permissionService.list(query)
+  }
+
+  @Get('modules')
+  @ZodSerializerDto(GetModulesPermissionResDTO)
+  getModules() {
+    return this.permissionService.listModules()
   }
 
   @Get(':permissionId')

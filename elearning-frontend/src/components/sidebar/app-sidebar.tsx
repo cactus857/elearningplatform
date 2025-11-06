@@ -4,17 +4,14 @@ import * as React from "react";
 import {
   IconBooks,
   IconCamera,
-  IconChartBar,
   IconDashboard,
   IconFileAi,
   IconFileDescription,
-  IconFolder,
   IconHelp,
   IconSearch,
-  IconSettings,
   IconShield,
+  IconShieldCog,
   IconUserCircle,
-  IconUsers,
   IconUsersGroup,
 } from "@tabler/icons-react";
 
@@ -51,9 +48,9 @@ const data = {
       icon: IconUsersGroup,
     },
     {
-      title: "Roles",
+      title: "Roles & Permissions",
       url: "/dashboard/roles",
-      icon: IconShield,
+      icon: IconShieldCog,
     },
     // {
     //   title: "Projects",
