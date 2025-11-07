@@ -13,6 +13,7 @@ import { ProfileModule } from './routes/profile/profile.module'
 import { UserModule } from './routes/user/user.module'
 import { MediaModule } from './routes/media/media.module'
 import { CourseModule } from './routes/course/course.module'
+import { ChapterModule } from './routes/chapter/chapter.module'
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { CourseModule } from './routes/course/course.module'
     UserModule,
     MediaModule,
     CourseModule,
+    ChapterModule,
   ],
   controllers: [AppController],
   providers: [
