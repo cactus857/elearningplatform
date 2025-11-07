@@ -87,7 +87,7 @@ export const GetChapterDetailResSchema = ChapterSchema.extend({
 })
 
 export const CreateChapterResSchema = ChapterSchema
-export const UpdateChapterResSchema = ChapterSchema
+export const UpdateChapterResSchema = ChapterSchema.partial().strict()
 
 // Types
 export type ChapterType = z.infer<typeof ChapterSchema>
