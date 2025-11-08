@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -89,6 +89,8 @@ export default function PermissionsTable() {
   const [isLoading, setIsLoading] = useState(false);
 
   const [moduleFilter, setModuleFilter] = useState("");
+  const [pageCount, setPageCount] = useState(0);
+  const filterChangedRef = useRef(false);
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -264,10 +266,6 @@ export default function PermissionsTable() {
   }, []);
 
   const fetchPermissions = async () => {
-    if (pagination.pageIndex > 0 && moduleFilter) {
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-      return;
-    }
     setIsLoading(true);
     try {
       const responseData = await getAllPermissions(
@@ -277,6 +275,7 @@ export default function PermissionsTable() {
       );
       setData(responseData.data);
       setTotalItems(responseData.totalItems);
+      setPageCount(Math.ceil(responseData.totalItems / pagination.pageSize));
     } catch (error) {
       toast.error("Failed to fetch permissions", {
         description: getErrorMessage(error),
@@ -287,13 +286,23 @@ export default function PermissionsTable() {
   };
 
   useEffect(() => {
-    fetchPermissions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.pageIndex, pagination.pageSize, moduleFilter]);
-
-  useEffect(() => {
+    filterChangedRef.current = true;
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [moduleFilter]);
+
+  // Khi pageIndex, pageSize, hoặc filter thay đổi → fetch data
+  useEffect(() => {
+    // Nếu filter vừa đổi, chỉ fetch sau khi pageIndex thực sự = 0
+    if (filterChangedRef.current && pagination.pageIndex !== 0) {
+      return; // chặn fetch sai
+    }
+
+    fetchPermissions();
+
+    // Reset flag sau khi fetch đúng
+    filterChangedRef.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.pageIndex, pagination.pageSize, moduleFilter]);
 
   const table = useReactTable({
     data,
@@ -305,7 +314,7 @@ export default function PermissionsTable() {
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
     manualPagination: true,
-    pageCount: Math.ceil(totalItems / pagination.pageSize),
+    pageCount,
   });
 
   const handleSuccess = () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -95,6 +95,7 @@ export default function UsersTable() {
 
   const [roles, setRoles] = useState<Roles[]>([]);
   const [isLoadingRoles, setIsLoadingRoles] = useState(true);
+  const filterChangedRef = useRef(false);
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -285,10 +286,10 @@ export default function UsersTable() {
   }, []);
 
   const fetchUsers = async () => {
-    if (pagination.pageIndex > 0 && roleFilter) {
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-      return;
-    }
+    // if (pagination.pageIndex > 0 && roleFilter) {
+    //   setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    //   return;
+    // }
     setIsLoading(true);
     try {
       const responseData = await getAllUsers(
@@ -308,19 +309,27 @@ export default function UsersTable() {
     }
   };
 
+  // Khi search hoặc filter đổi → reset page về đầu
   useEffect(() => {
+    filterChangedRef.current = true;
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [debouncedSearchQuery, roleFilter]);
+
+  // Khi pagination hoặc filter đổi → fetch dữ liệu
+  useEffect(() => {
+    if (filterChangedRef.current && pagination.pageIndex !== 0) {
+      return; // chặn fetch sai trang khi vừa đổi filter
+    }
+
     fetchUsers();
+    filterChangedRef.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    debouncedSearchQuery,
     pagination.pageIndex,
     pagination.pageSize,
     roleFilter,
+    debouncedSearchQuery,
   ]);
-
-  useEffect(() => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedSearchQuery, roleFilter]);
 
   const table = useReactTable({
     data,
