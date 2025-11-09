@@ -54,6 +54,7 @@ export const CreateCourseBodySchema = CourseSchema.pick({
   level: true,
   category: true,
   smallDescription: true,
+  status: true,
   requirements: true,
   whatYouWillLearn: true,
 })

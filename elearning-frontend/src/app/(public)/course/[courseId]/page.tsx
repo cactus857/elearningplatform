@@ -176,7 +176,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
                         className="object-cover"
                       />
                       <div className="absolute inset-0 bg-black/20 flex items-center justify-center hover:bg-black/30 transition-colors cursor-pointer">
-                        <div className="bg-white rounded-full p-4 shadow-xl hover:scale-110 transition-transform">
+                        <div className="bg-accent rounded-full p-4 shadow-xl hover:scale-110 transition-transform">
                           <PlayCircle className="h-12 w-12 text-primary" />
                         </div>
                       </div>

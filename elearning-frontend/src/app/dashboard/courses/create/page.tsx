@@ -8,9 +8,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, PlusIcon, SparkleIcon } from "lucide-react";
+import { ArrowLeft, PlusIcon, SparkleIcon, X } from "lucide-react";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 import z from "zod";
 import {
   Form,
@@ -33,11 +33,14 @@ import {
 } from "@/components/ui/select";
 import { RichTextEditor } from "@/components/rich-text-editor/Editor";
 import { Uploader } from "@/components/file-uploader/Uploader";
+import { createCourse } from "@/services/course.service";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
+import { getErrorMessage } from "@/utils/error-message";
 
 const courseLevels = ["Beginner", "Intermediate", "Advanced"] as const;
-
 const courseStatus = ["Draft", "Published", "Archived"] as const;
-
 const courseCategories = [
   "Development",
   "Business",
@@ -57,22 +60,19 @@ const courseCategories = [
 export const courseSchema = z.object({
   title: z
     .string()
-    .min(5, { message: "Title must be at least 3 characters" })
+    .min(5, { message: "Title must be at least 5 characters" })
     .max(100, { message: "Title must be at most 100 characters" }),
   description: z
     .string()
-    .min(10, { message: "Description must be at least 3 characters " }),
+    .min(10, { message: "Description must be at least 10 characters" }),
   thumbnail: z.string().optional(),
-  duration: z
-    .number()
-    .min(1, { message: "Duration must be at least 1 hour." })
-    .max(500, { message: "Duration must be at most 500 hours." }),
   level: z.enum(courseLevels, {
     message: "Level must be one of Beginner, Intermediate, Advanced",
   }),
   status: z.enum(courseStatus, {
     message: "Status must be one of Draft, Published, Archived",
   }),
+  duration: z.number().optional(),
   slug: z.string().min(3, { message: "Slug must be at least 3 characters" }),
   category: z.enum(courseCategories, {
     message: "Category must be one of the predefined categories",
@@ -88,30 +88,94 @@ export const courseSchema = z.object({
 });
 
 function CourseCreationPage() {
+  const [requirements, setRequirements] = useState<string[]>([]);
+  const [whatYouWillLearn, setWhatYouWillLearn] = useState<string[]>([]);
+  const [newRequirement, setNewRequirement] = useState("");
+  const [newLearning, setNewLearning] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+
   const form = useForm<z.infer<typeof courseSchema>>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
       title: "",
       description: "",
       thumbnail: "",
-      duration: 0,
       level: "Beginner",
       status: "Draft",
       slug: "",
       category: "IT & Software",
+      duration: 0,
       smallDescription: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof courseSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
+  const addRequirement = () => {
+    if (newRequirement.trim()) {
+      setRequirements([...requirements, newRequirement.trim()]);
+      setNewRequirement("");
+    }
+  };
+
+  const removeRequirement = (index: number) => {
+    setRequirements(requirements.filter((_, i) => i !== index));
+  };
+
+  const addLearning = () => {
+    if (newLearning.trim()) {
+      setWhatYouWillLearn([...whatYouWillLearn, newLearning.trim()]);
+      setNewLearning("");
+    }
+  };
+
+  const removeLearning = (index: number) => {
+    setWhatYouWillLearn(whatYouWillLearn.filter((_, i) => i !== index));
+  };
+
+  async function onSubmit(values: z.infer<typeof courseSchema>) {
+    try {
+      setIsSubmitting(true);
+
+      const createData = {
+        title: values.title,
+        description: values.description,
+        thumbnail: values.thumbnail,
+        level: values.level.toUpperCase() as
+          | "BEGINNER"
+          | "INTERMEDIATE"
+          | "ADVANCED",
+        status: values.status.toUpperCase() as
+          | "DRAFT"
+          | "PUBLISHED"
+          | "ARCHIVED",
+        slug: values.slug,
+        duration: values.duration,
+        category: values.category,
+        smallDescription: values.smallDescription,
+        requirements: requirements,
+        whatYouWillLearn: whatYouWillLearn,
+      };
+
+      console.log("Creating course with data:", createData);
+
+      const newCourse = await createCourse(createData);
+
+      toast.success("Course created successfully!");
+      router.push(`/dashboard/courses/${newCourse.id}/edit`);
+    } catch (error: any) {
+      console.error("Error creating course:", error);
+      console.error("Error response:", error?.response?.data);
+      toast.error("Failed to fetch courses", {
+        description: getErrorMessage(error),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 mb-6">
         <Link
           href="/dashboard/courses"
           className={buttonVariants({
@@ -121,7 +185,7 @@ function CourseCreationPage() {
         >
           <ArrowLeft className="size-4" />
         </Link>
-        <h1 className="text-2xl font-bold">Create Courses</h1>
+        <h1 className="text-2xl font-bold">Create Course</h1>
       </div>
 
       <Card>
@@ -147,6 +211,7 @@ function CourseCreationPage() {
                   </FormItem>
                 )}
               />
+
               <div className="flex gap-4 items-end">
                 <FormField
                   control={form.control}
@@ -167,7 +232,6 @@ function CourseCreationPage() {
                   onClick={() => {
                     const title = form.getValues("title");
                     const slug = slugify(title, { lower: true, strict: true });
-
                     form.setValue("slug", slug, { shouldValidate: true });
                   }}
                 >
@@ -214,12 +278,112 @@ function CourseCreationPage() {
                   <FormItem className="w-full">
                     <FormLabel>Thumbnail Image</FormLabel>
                     <FormControl>
-                      <Uploader />
+                      <Uploader
+                        value={field.value}
+                        onChange={(url) => field.onChange(url)}
+                        onRemove={() => field.onChange("")}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {/* Requirements Section */}
+              <div className="space-y-3">
+                <FormLabel>Requirements</FormLabel>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-3">
+                      {requirements.map((req, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-2 p-3 bg-muted rounded-lg"
+                        >
+                          <span className="flex-1 text-sm">{req}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => removeRequirement(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Add a requirement..."
+                          value={newRequirement}
+                          onChange={(e) => setNewRequirement(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addRequirement();
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={addRequirement}
+                        >
+                          <PlusIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* What You'll Learn Section */}
+              <div className="space-y-3">
+                <FormLabel>What You Will Learn</FormLabel>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-3">
+                      {whatYouWillLearn.map((item, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-2 p-3 bg-muted rounded-lg"
+                        >
+                          <span className="flex-1 text-sm">{item}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => removeLearning(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Add a learning outcome..."
+                          value={newLearning}
+                          onChange={(e) => setNewLearning(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addLearning();
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={addLearning}
+                        >
+                          <PlusIcon className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -289,6 +453,9 @@ function CourseCreationPage() {
                           placeholder="Duration"
                           type="number"
                           {...field}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -325,8 +492,17 @@ function CourseCreationPage() {
                 />
               </div>
 
-              <Button className="w-full">
-                Create Course <PlusIcon className="ml-1" size={16} />
+              <Button className="w-full" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <LoadingSpinner />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    Create Course <PlusIcon className="ml-1" size={16} />
+                  </>
+                )}
               </Button>
             </form>
           </Form>

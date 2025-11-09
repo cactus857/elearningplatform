@@ -86,6 +86,22 @@ export interface UpdateCourseDto {
   whatYouWillLearn?: string[];
 }
 
+// Create Course DTO
+export interface CreateCourseDto {
+  title: string;
+  description?: string;
+  thumbnail?: string;
+  duration?: number;
+  level: CourseLevel;
+  status?: CourseStatus;
+  slug?: string;
+  category?: string;
+  smallDescription?: string;
+  requirements?: string[];
+  whatYouWillLearn?: string[];
+  instructorId?: string;
+}
+
 // Chapter DTOs
 export interface CreateChapterDto {
   title: string;
@@ -120,6 +136,7 @@ export interface ReorderLessonsDto {
   lessons: { id: string; position: number }[];
 }
 
+// Get All Courses with Pagination
 export const getAllCourses = async (
   page: number,
   limit: number
@@ -136,12 +153,19 @@ export const getAllCourses = async (
   return response.data;
 };
 
+// Get Course by ID
 export const getCourseById = async (
   courseId: string
 ): Promise<ICourseDetailRes> => {
   const response = await api.get<ICourseDetailRes>(
     `${API_ENDPOINT.COURSES}/${courseId}`
   );
+  return response.data;
+};
+
+// Course Creation
+export const createCourse = async (data: CreateCourseDto): Promise<ICourse> => {
+  const response = await api.post<ICourse>(API_ENDPOINT.COURSES, data);
   return response.data;
 };
 
