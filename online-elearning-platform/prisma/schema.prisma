@@ -247,6 +247,14 @@ model Enrollment {
 model Quiz {
   id    String @id @default(auto()) @map("_id") @db.ObjectId
   title String
+  timeLimitMinutes   Int?
+  passingScore       Int @default(60)
+  maxAttempts        Int?
+  availableFrom      DateTime?
+  availableTo        DateTime?
+  shuffleQuestions   Boolean @default(false)
+  shuffleOptions     Boolean @default(false)
+  showCorrectAnswers Boolean @default(true)
 
   courseId String @db.ObjectId
   course   Course @relation(fields: [courseId], references: [id])
@@ -282,7 +290,11 @@ model StudentQuizAttempt {
   student     User     @relation(fields: [studentId], references: [id])
   quizId      String   @db.ObjectId
   quiz        Quiz     @relation(fields: [quizId], references: [id])
-  submittedAt DateTime @default(now())
+  startedAt        DateTime
+  submittedAt DateTime? @default(now())
+  timeSpentSeconds Int
+  isPassed         Boolean
+  answers          Json // [{questionId, selectedAnswerIndex, isCorrect}]
 }
 
 enum UserStatus {

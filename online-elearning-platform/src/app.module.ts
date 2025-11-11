@@ -16,6 +16,7 @@ import { CourseModule } from './routes/course/course.module'
 import { ChapterModule } from './routes/chapter/chapter.module'
 import { LessonModule } from './routes/lesson/lesson.module'
 import { EnrollmentModule } from './routes/enrollment/enrollment.module'
+import { QuizzModule } from './routes/quizz/quizz.module'
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { EnrollmentModule } from './routes/enrollment/enrollment.module'
     ChapterModule,
     LessonModule,
     EnrollmentModule,
+    QuizzModule,
   ],
   controllers: [AppController],
   providers: [

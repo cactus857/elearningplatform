@@ -11,11 +11,13 @@ import { isNotFoundPrismaError } from 'src/shared/helper'
 import { NotFoundRecordException } from 'src/shared/error'
 import { RoleName } from 'src/shared/constants/role.constants'
 import { CourseRepository } from '../course/course.repository'
+import { LessonRepository } from '../lesson/lesson.repository'
 
 @Injectable()
 export class ChapterService {
   constructor(
     private chapterRepository: ChapterRepository,
+    private lessonRepository: LessonRepository,
     private courseRepository: CourseRepository,
   ) {}
 
@@ -108,6 +110,9 @@ export class ChapterService {
       if (userRoleName === RoleName.Instructor && chapter?.course?.instructorId !== userId) {
         throw new ForbiddenException('You can only delete chapters of your own courses')
       }
+
+      // Xoá tất cả lessons thuộc chapter này
+      await this.lessonRepository.deleteByChapterId(id)
 
       await this.chapterRepository.delete({ id })
       return { message: 'Chapter deleted successfully' }

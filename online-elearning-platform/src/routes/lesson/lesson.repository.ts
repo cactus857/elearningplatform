@@ -120,4 +120,16 @@ export class LessonRepository {
     })
     return !!lesson
   }
+
+  async deleteByChapterId(chapterId: string): Promise<void> {
+    await this.prismaService.lesson.updateMany({
+      where: {
+        chapterId,
+        deletedAt: null,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    })
+  }
 }
