@@ -202,16 +202,22 @@ export default function QuizResultPage() {
                         <div
                           key={optionIndex}
                           className={cn(
-                            "rounded-lg border p-3",
+                            "rounded-lg border p-3 transition-colors",
+
+                            // Selected AND correct
                             isSelected &&
                               isCorrect &&
-                              "border-green-500 bg-green-50",
+                              "border-primary bg-primary/15 dark:bg-primary/20",
+
+                            // Selected BUT wrong
                             isSelected &&
                               !isCorrect &&
-                              "border-red-500 bg-red-50",
+                              "border-destructive bg-destructive/15 dark:bg-destructive/20",
+
+                            // Not selected BUT this is correct answer
                             !isSelected &&
                               isCorrectAnswer &&
-                              "border-green-500 bg-green-50"
+                              "border-primary bg-primary/15 dark:bg-primary/20"
                           )}
                         >
                           <div className="flex items-start gap-2">
@@ -220,14 +226,17 @@ export default function QuizResultPage() {
                             </span>
                             <span className="flex-1">{option}</span>
                             {isSelected && (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge
+                                variant="outline"
+                                className="text-xs bg-accent"
+                              >
                                 Bạn chọn
                               </Badge>
                             )}
                             {isCorrectAnswer && (
                               <Badge
                                 variant="outline"
-                                className="bg-green-100 text-xs"
+                                className="bg-green-400 text-xs"
                               >
                                 Đáp án đúng
                               </Badge>

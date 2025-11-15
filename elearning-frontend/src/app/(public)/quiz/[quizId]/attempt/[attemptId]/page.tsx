@@ -2,10 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Loader2 } from "lucide-react";
+import {
+  AlertCircle,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Send,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,9 +25,9 @@ import {
 import { toast } from "sonner";
 import { IQuizForStudent, submitQuiz } from "@/services/quiz.service";
 import { useQuizTimer } from "@/hooks/use-quiz-timer";
-import { QuizTimer } from "@/app/quiz/_components/QuizTimer";
-import { QuestionCard } from "@/app/quiz/_components/QuestionCard";
-import { QuizNavigation } from "@/app/quiz/_components/QuizNavigation";
+import { QuizTimer } from "../../../_components/QuizTimer";
+import { QuestionCard } from "../../../_components/QuestionCard";
+import { QuizNavigation } from "../../../_components/QuizNavigation";
 
 export default function DoQuizPage() {
   const params = useParams();
@@ -32,7 +38,7 @@ export default function DoQuizPage() {
   const [quiz, setQuiz] = useState<IQuizForStudent | null>(null);
   const [startTime, setStartTime] = useState<string>("");
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Map<string, number>>(new Map());
+  const [answers, setAnswers] = useState<Map<string, number>>(new Map()); // Không có default value
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
@@ -97,7 +103,15 @@ export default function DoQuizPage() {
   const handleAnswerChange = (questionId: string, answerIndex: number) => {
     setAnswers((prev) => {
       const newAnswers = new Map(prev);
-      newAnswers.set(questionId, answerIndex);
+
+      if (answerIndex === -1) {
+        // Bỏ chọn - xóa answer
+        newAnswers.delete(questionId);
+      } else {
+        // Chọn mới
+        newAnswers.set(questionId, answerIndex);
+      }
+
       return newAnswers;
     });
   };
@@ -191,44 +205,129 @@ export default function DoQuizPage() {
         isTimeUp={isTimeUp}
       />
 
-      <div className="container mx-auto max-w-5xl p-4 pb-20">
+      <div className="container mx-auto max-w-[1600px] p-4 pb-20">
         {/* Header */}
-        <div className="mb-6 rounded-lg border bg-card p-6">
-          <h1 className="text-2xl font-bold">{quiz.title}</h1>
-          <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
-            <span>Tổng số câu: {quiz.questions.length}</span>
-            {quiz.timeLimitMinutes && (
-              <span>Thời gian: {quiz.timeLimitMinutes} phút</span>
-            )}
-            <span>Điểm đạt: {quiz.passingScore}%</span>
+        <div className="mb-6 overflow-hidden rounded-2xl border-2 bg-gradient-to-br from-primary/10 to-primary/5 shadow-sm">
+          <div className="p-6">
+            <h1 className="text-2xl font-bold lg:text-3xl">{quiz.title}</h1>
+            <div className="mt-4 flex flex-wrap gap-4 text-sm lg:gap-6">
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20">
+                  <span className="text-lg font-bold text-primary">
+                    {quiz.questions.length}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Tổng số câu</p>
+                  <p className="font-semibold">
+                    {quiz.questions.length} câu hỏi
+                  </p>
+                </div>
+              </div>
+
+              {quiz.timeLimitMinutes && (
+                <div className="flex items-center gap-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/20">
+                    <span className="text-lg font-bold">⏱️</span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Thời gian</p>
+                    <p className="font-semibold">
+                      {quiz.timeLimitMinutes} phút
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20">
+                  <span className="text-lg font-bold">✓</span>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Điểm đạt</p>
+                  <p className="font-semibold">{quiz.passingScore}%</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Question */}
-        <div className="mb-6">
-          <QuestionCard
-            question={currentQuestionData}
-            questionNumber={currentQuestion + 1}
-            totalQuestions={quiz.questions.length}
-            selectedAnswer={answers.get(currentQuestionData.id) ?? null}
-            onAnswerChange={(answerIndex) =>
-              handleAnswerChange(currentQuestionData.id, answerIndex)
-            }
-          />
-        </div>
+        {/* 2 Column Layout */}
+        <div className="grid gap-6 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_400px]">
+          {/* LEFT: Questions */}
+          <div className="space-y-6 min-w-0">
+            <QuestionCard
+              question={currentQuestionData}
+              questionNumber={currentQuestion + 1}
+              totalQuestions={quiz.questions.length}
+              selectedAnswer={answers.get(currentQuestionData.id) ?? null}
+              onAnswerChange={(answerIndex) =>
+                handleAnswerChange(currentQuestionData.id, answerIndex)
+              }
+            />
 
-        {/* Navigation */}
-        <QuizNavigation
-          currentQuestion={currentQuestion}
-          totalQuestions={quiz.questions.length}
-          answers={answers}
-          questions={quiz.questions}
-          onNavigate={handleNavigate}
-          onPrevious={handlePrevious}
-          onNext={handleNext}
-          onSubmit={() => setShowSubmitDialog(true)}
-          isSubmitting={isSubmitting}
-        />
+            {/* Mobile Nav */}
+            <div className="flex items-center justify-between gap-4 lg:hidden">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handlePrevious}
+                disabled={currentQuestion === 0}
+                className="gap-2"
+              >
+                <ChevronLeft className="h-5 w-5" />
+                Câu trước
+              </Button>
+
+              {currentQuestion === quiz.questions.length - 1 ? (
+                <Button
+                  size="lg"
+                  onClick={() => setShowSubmitDialog(true)}
+                  disabled={isSubmitting}
+                  className={cn(
+                    "gap-2 min-w-[140px]",
+                    answers.size === quiz.questions.length
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-yellow-600 hover:bg-yellow-700"
+                  )}
+                >
+                  {isSubmitting ? (
+                    <>Đang nộp bài...</>
+                  ) : (
+                    <>
+                      <Send className="h-5 w-5" />
+                      Nộp bài
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  onClick={handleNext}
+                  className="gap-2 min-w-[140px]"
+                >
+                  Câu sau
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT: Sidebar */}
+          <div className="lg:sticky lg:top-4">
+            <QuizNavigation
+              currentQuestion={currentQuestion}
+              totalQuestions={quiz.questions.length}
+              answers={answers}
+              questions={quiz.questions}
+              onNavigate={handleNavigate}
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              onSubmit={() => setShowSubmitDialog(true)}
+              isSubmitting={isSubmitting}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Submit Confirmation Dialog */}

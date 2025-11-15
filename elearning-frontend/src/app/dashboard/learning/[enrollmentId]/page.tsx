@@ -472,7 +472,7 @@ export default function LearningPage({ params }: { params: Params }) {
   const isLastLesson =
     enrollmentData.course.chapters[enrollmentData.course.chapters.length - 1]
       ?.id === currentChapter?.id &&
-    currentLessonIndex === currentChapter.lessons.length - 1;
+    currentLessonIndex === currentChapter?.lessons?.length - 1;
 
   return (
     <div className="flex h-screen bg-background">

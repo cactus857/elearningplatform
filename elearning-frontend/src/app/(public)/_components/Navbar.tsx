@@ -20,6 +20,10 @@ const navigationItems = [
     name: "Dashoard",
     href: "/dashboard",
   },
+  {
+    name: "Quizzes Bank",
+    href: "/quiz",
+  },
 ];
 
 export function Navbar() {
