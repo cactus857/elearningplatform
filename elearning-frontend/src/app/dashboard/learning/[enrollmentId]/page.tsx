@@ -104,6 +104,7 @@ export default function LearningPage({ params }: { params: Params }) {
     if (enrollmentId) {
       fetchEnrollmentData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enrollmentId]);
 
   const fetchEnrollmentData = async () => {
@@ -265,6 +266,7 @@ export default function LearningPage({ params }: { params: Params }) {
   };
 
   // Function to render lesson content based on type
+  // Function to render lesson content based on type
   const renderLessonContent = () => {
     if (!currentLesson) {
       return (
@@ -282,55 +284,55 @@ export default function LearningPage({ params }: { params: Params }) {
     const youtubeId = extractYouTubeId(currentLesson.videoUrl || "");
     const isYouTubeUrl = youtubeId !== null;
 
-    const opts: YouTubeProps["opts"] = {
-      height: "390",
-      width: "100%",
-      playerVars: {
-        autoplay: 0,
-        controls: 1,
-        modestbranding: 1,
-      },
-    };
-
     // Priority 1: Video (YouTube or regular video)
     if (currentLesson.videoUrl) {
       return (
         <>
-          {/* Video Container - Full Width */}
-          <div className="relative w-full bg-black" style={{ height: "55vh" }}>
-            {isYouTubeUrl ? (
-              <div className="absolute inset-0">
-                <YouTube
-                  videoId={youtubeId}
-                  opts={{
-                    width: "100%",
-                    height: "100%",
-                    playerVars: {
-                      autoplay: 0,
-                      controls: 1,
-                      modestbranding: 1,
-                    },
-                  }}
-                  iframeClassName="youtube-iframe"
-                />
-              </div>
-            ) : (
-              <video
-                key={currentLesson.id}
-                controls
-                className="w-full h-full object-contain"
-                src={currentLesson.videoUrl}
-              />
-            )}
+          {/* Video Container - 16:9 Aspect Ratio */}
+          <div className="w-full bg-black flex items-center justify-center">
+            <div className="w-full max-w-7xl">
+              {isYouTubeUrl ? (
+                <div
+                  className="relative w-full"
+                  style={{ paddingBottom: "56.25%" }}
+                >
+                  <YouTube
+                    videoId={youtubeId}
+                    opts={{
+                      width: "100%",
+                      height: "100%",
+                      playerVars: {
+                        autoplay: 0,
+                        controls: 1,
+                        modestbranding: 1,
+                        rel: 0,
+                      },
+                    }}
+                    className="absolute top-0 left-0 w-full h-full"
+                    iframeClassName="w-full h-full"
+                  />
+                </div>
+              ) : (
+                <div
+                  className="relative w-full"
+                  style={{ paddingBottom: "56.25%" }}
+                >
+                  <video
+                    key={currentLesson.id}
+                    controls
+                    className="absolute top-0 left-0 w-full h-full"
+                    src={currentLesson.videoUrl}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Content Below Video */}
           {currentLesson.content && (
-            <div className="w-full bg-background p-6 md:p-8 mt-0">
-              {/* FULL-WIDTH SEPARATOR */}
-              <Separator className="w-full max-w-none mb-6" />
-
+            <div className="w-full bg-background p-6 md:p-8">
               <div className="max-w-4xl">
+                <Separator className="mb-6" />
                 <h3 className="font-semibold text-lg md:text-xl mb-4 md:mb-6">
                   Lesson Materials
                 </h3>
@@ -381,7 +383,6 @@ export default function LearningPage({ params }: { params: Params }) {
                 </Button>
               </div>
 
-              {/* Show content if exists */}
               {currentLesson.content && (
                 <>
                   <Separator />
@@ -408,9 +409,6 @@ export default function LearningPage({ params }: { params: Params }) {
     if (currentLesson.content) {
       return (
         <div className="w-full bg-background p-6 md:p-8 overflow-auto">
-          {/* FULL WIDTH SEPARATOR */}
-          <Separator className="w-full max-w-none mb-6" />
-
           <div className="max-w-4xl">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -423,8 +421,8 @@ export default function LearningPage({ params }: { params: Params }) {
                 <p className="text-sm text-muted-foreground">Reading Lesson</p>
               </div>
             </div>
+            <Separator className="mb-6" />
 
-            {/* CONTENT */}
             <div
               className="prose prose-sm md:prose-base dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: currentLesson.content }}

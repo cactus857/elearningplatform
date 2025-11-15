@@ -65,8 +65,8 @@ export class QuizController {
     @ActiveRolePermissions('name') roleName: string,
   ) {
     return this.quizService.getAttempts({
-      page: query.page || 1,
-      limit: query.limit || 10,
+      page: Number(query.page || 1),
+      limit: Number(query.limit || 10),
       quizId: query.quizId,
       userId,
       userRoleName: roleName,

@@ -40,7 +40,7 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
         </AuthProvider>
-        <Toaster />
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );
