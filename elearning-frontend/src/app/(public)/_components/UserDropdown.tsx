@@ -29,7 +29,6 @@ interface IAppProps {
 
 export function UserDropdown({ email, image, name }: IAppProps) {
   const { user, logout, isLoading } = useAuth();
-  console.log("User in dropdown:", image);
 
   if (!user) return null;
 
