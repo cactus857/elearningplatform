@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { getErrorMessage } from "@/utils/error-message";
 import { TwoFactorAuthModal } from "./TwoFactorAuthModal";
 import Logo from "@/components/shared/Logo";
+import { IconBrandGithubFilled } from "@tabler/icons-react";
 
 const formSchema = z.object({
   email: z.email({ message: "Please enter a valid email." }),
@@ -40,7 +41,8 @@ export default function LoginPage() {
   const [pendingCredentials, setPendingCredentials] =
     useState<LoginFormValues | null>(null);
   const router = useRouter();
-  const { login, loginWithGoogle, user, isLoading } = useAuth();
+  const { login, loginWithGoogle, loginWithGithub, user, isLoading } =
+    useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -65,6 +67,17 @@ export default function LoginPage() {
       });
     }
   };
+
+  const handleGithubLogin = async () => {
+    try {
+      await loginWithGithub();
+    } catch (error) {
+      toast.error("Github Login Failed!", {
+        position: "top-center",
+      });
+    }
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
@@ -228,14 +241,25 @@ export default function LoginPage() {
                 <div className="flex-grow border-t"></div>
               </div>
 
-              <Button
-                variant="outline"
-                className="h-12 w-full rounded-lg"
-                onClick={handleGoogleLogin}
-              >
-                <IconGoogle />
-                Continue with Google
-              </Button>
+              <div className="flex flex-col gap-4">
+                <Button
+                  variant="outline"
+                  className="h-12 w-full rounded-lg"
+                  onClick={handleGoogleLogin}
+                >
+                  <IconGoogle />
+                  Continue with Google
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="h-12 w-full rounded-lg"
+                  onClick={handleGithubLogin}
+                >
+                  <IconBrandGithubFilled />
+                  Continue with Github
+                </Button>
+              </div>
 
               <p className="mt-8 text-center text-sm text-muted-foreground">
                 Don&apos;t have an account?{" "}

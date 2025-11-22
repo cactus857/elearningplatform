@@ -21,6 +21,7 @@ interface AuthContextType {
   user: TUserProfileRes | null;
   login: (credentials: ILoginReqBody) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
+  loginWithGithub: () => Promise<void>;
   fetchUserAfterLogin: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
@@ -86,6 +87,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithGithub = async () => {
+    try {
+      const res = await api.get(API_ENDPOINT.LOGIN_WITH_GITHUB);
+
+      window.location.href = res.data.url;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const logout = async () => {
     const refreshToken = getRefreshToken();
 
@@ -110,6 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     login,
     loginWithGoogle,
+    loginWithGithub,
     fetchUserAfterLogin,
     logout,
     isLoading,

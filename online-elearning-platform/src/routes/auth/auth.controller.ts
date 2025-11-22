@@ -25,12 +25,14 @@ import express from 'express'
 import envConfig from 'src/shared/config'
 import { EmptyBodyDTO } from 'src/shared/dtos/request.dto'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
+import { GithubService } from './gituhb.service'
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly googleService: GoogleService,
+    private readonly githubService: GithubService,
   ) {}
 
   @Post('register')
@@ -85,6 +87,8 @@ export class AuthController {
     return this.authService.logout(body.refreshToken)
   }
 
+  // -------------Google OAuth Routes----------
+
   @Get('google-link')
   @IsPublic()
   @ZodSerializerDto(GetAuthorizationUrlResDTO)
@@ -103,6 +107,29 @@ export class AuthController {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to login with Google'
       return res.redirect(`${envConfig.GOOGLE_CLIENT_REDIRECT_URI}?errorMessage=${message}`)
+    }
+  }
+
+  // -------------Github OAuth Routes----------
+  // ===== GITHUB OAUTH =====
+  @Get('github-link')
+  @IsPublic()
+  @ZodSerializerDto(GetAuthorizationUrlResDTO)
+  getGithubAuthorizationURL(@UserAgent() userAgent: string, @Ip() ip: string) {
+    return this.githubService.getAuthorizationURL({ userAgent, ip })
+  }
+
+  @Get('github/callback')
+  @IsPublic()
+  async githubCallback(@Query('code') code: string, @Query('state') state: string, @Res() res: express.Response) {
+    try {
+      const data = await this.githubService.githubCallback({ code, state })
+      return res.redirect(
+        `${envConfig.GITHUB_CLIENT_REDIRECT_URI}?accessToken=${data.accessToken}&refreshToken=${data.refreshToken}`,
+      )
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to login with GitHub'
+      return res.redirect(`${envConfig.GITHUB_CLIENT_REDIRECT_URI}?errorMessage=${message}`)
     }
   }
 
