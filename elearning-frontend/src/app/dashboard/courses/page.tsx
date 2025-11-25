@@ -205,10 +205,12 @@ function CoursesPage() {
             Manage and organize your courses
           </p>
         </div>
-        <Link href="/dashboard/courses/create" className={buttonVariants()}>
-          <Plus className="h-4 w-4" />
-          Create Course
-        </Link>
+        <div className="flex items-center justify-between gap-2">
+          <Link href="/dashboard/courses/create" className={buttonVariants()}>
+            <Plus className="h-4 w-4" />
+            Create Course
+          </Link>
+        </div>
       </div>
 
       {/* Filters & Search Section */}

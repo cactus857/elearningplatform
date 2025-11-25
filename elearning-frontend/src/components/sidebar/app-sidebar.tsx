@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import {
+  IconAi,
   IconBooks,
+  IconBrandGithubCopilot,
   IconCamera,
   IconDashboard,
   IconDatabase,
@@ -79,6 +81,12 @@ const data = {
       title: "Quizzes",
       url: "/dashboard/quizzes",
       icon: IconDatabase,
+      roles: ["ADMIN", "INSTRUCTOR"],
+    },
+    {
+      title: "AI Assistants",
+      url: "/dashboard/ai-assistant",
+      icon: IconBrandGithubCopilot,
       roles: ["ADMIN", "INSTRUCTOR"],
     },
     // {

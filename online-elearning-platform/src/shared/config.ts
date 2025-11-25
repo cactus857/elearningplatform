@@ -39,6 +39,12 @@ const configSchema = z.object({
   GITHUB_CLIENT_SECRET: z.string(),
   GITHUB_REDIRECT_URI: z.string(),
   GITHUB_CLIENT_REDIRECT_URI: z.string(),
+  LANGSMITH_API_KEY: z.string(),
+  LANGSMITH_PROJECT: z.string(),
+  OPENAI_API_KEY: z.string(),
+  YOUTUBE_API_KEY: z.string(),
+  AIGURU_API_KEY: z.string(),
+  AIGURU_API_URL: z.string(),
 })
 
 const configServer = configSchema.safeParse(process.env)
