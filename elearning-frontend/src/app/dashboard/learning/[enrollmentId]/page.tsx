@@ -15,9 +15,8 @@ import {
   ArrowLeft,
   Download,
 } from "lucide-react";
-import YouTube, { YouTubeProps } from "react-youtube";
+import YouTube from "react-youtube";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
@@ -546,7 +545,7 @@ export default function LearningPage({ params }: { params: Params }) {
                       <ChevronRight className="h-4 w-4 mr-2 flex-shrink-0" />
                     )}
                     <div className="flex-1 text-left">
-                      <p className="font-semibold text-sm">
+                      <p className="font-semibold text-sm whitespace-normal line-clamp-2">
                         {chapterIndex + 1}. {chapter.title}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -581,7 +580,7 @@ export default function LearningPage({ params }: { params: Params }) {
                                 <FileText className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
                               )}
                               <div className="flex-1 text-left">
-                                <p className="text-sm font-medium line-clamp-2">
+                                <p className="text-sm font-medium whitespace-normal line-clamp-2">
                                   {lessonIndex + 1}. {lesson.title}
                                 </p>
                               </div>
@@ -599,7 +598,7 @@ export default function LearningPage({ params }: { params: Params }) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="h-14 border-b flex items-center px-4 bg-card">
+        <div className="min-h-14 border-b px-4 py-2 bg-card flex flex-col justify-center">
           <Button
             variant="ghost"
             size="icon"
@@ -608,10 +607,12 @@ export default function LearningPage({ params }: { params: Params }) {
             <Menu className="h-5 w-5" />
           </Button>
           <div className="ml-4 flex-1 min-w-0">
-            <p className="text-sm text-muted-foreground truncate">
+            <p className="text-sm text-muted-foreground whitespace-normal line-clamp-2">
               {currentChapter?.title}
             </p>
-            <h2 className="font-semibold truncate">{currentLesson?.title}</h2>
+            <h2 className="font-semibold whitespace-normal line-clamp-2">
+              {currentLesson?.title}
+            </h2>
           </div>
           <Button
             variant="outline"

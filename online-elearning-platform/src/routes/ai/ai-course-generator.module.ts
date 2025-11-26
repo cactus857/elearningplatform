@@ -17,6 +17,7 @@ import { CoursePlannerNode } from './nodes/course-planner.node'
 import { ChapterGeneratorNode } from './nodes/chapter-generator.node'
 import { ThumbnailGeneratorNode } from './nodes/thumbnail-generator.node'
 import { VideoFetcherNode } from './nodes/video-fetcher.node'
+import { AiCourseGeneratorRepository } from './ai-course-generator.repository'
 
 @Module({
   imports: [
@@ -27,6 +28,8 @@ import { VideoFetcherNode } from './nodes/video-fetcher.node'
     // Main service
     AiCourseGeneratorService,
 
+    // Repository
+    AiCourseGeneratorRepository,
     // Workflow
     CourseGeneratorWorkflow,
 

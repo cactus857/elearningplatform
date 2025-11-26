@@ -117,6 +117,7 @@ export const GetCourseDetailResSchema = CourseSchema.extend({
             position: z.number(),
             videoUrl: z.string().nullable(),
             documentUrl: z.string().nullable(),
+            content: z.string().nullable(),
           }),
         ),
       }),

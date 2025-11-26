@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   Send,
-  Sparkles,
+  BotMessageSquare,
   BookOpen,
   Eye,
   Save,
@@ -15,6 +15,7 @@ import {
   Play,
   Clock,
   AlertCircle,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,10 +27,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { aiGenerateCourse } from "@/services/ai.service";
+import { aiGenerateCourse, aiSaveCourse } from "@/services/ai.service";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { CourseLevel, CourseStatus } from "@/services/course.service";
+import { useAuth } from "@/hooks/use-auth";
 
 type MessageType = "user" | "assistant" | "system";
 
@@ -44,14 +48,14 @@ interface CourseData {
   title: string;
   description: string;
   thumbnail: string;
-  level: string;
   smallDescription: string;
   category: string;
   duration: number;
   whatYouWillLearn: string[];
   requirements: string[];
   chapters: Chapter[];
-  status: string;
+  level: CourseLevel;
+  status: CourseStatus;
 }
 
 interface Chapter {
@@ -63,13 +67,16 @@ interface Chapter {
 interface Lesson {
   title: string;
   position: number;
-  videoUrl: string;
-  duration: number;
+  videoUrl: string | null;
+  duration: number | null;
   content: string;
 }
 
-const STORAGE_KEY = "chat_history";
-const COURSE_STORAGE_KEY = "generated_course";
+const getStorageKey = (userId: string | undefined, baseKey: string) => {
+  return userId ? `${baseKey}_${userId}` : `${baseKey}_guest`;
+};
+const BASE_CHAT_KEY = "chat_history";
+const BASE_COURSE_KEY = "generated_course";
 
 // Loading dots animation component
 const LoadingDots = () => {
@@ -83,9 +90,13 @@ const LoadingDots = () => {
 };
 
 const AICourseGenerator = () => {
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
+
   const [messages, setMessages] = useState<Message[]>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const storageKey = getStorageKey(user?.id, BASE_CHAT_KEY);
+      const saved = localStorage.getItem(storageKey);
       if (saved) {
         try {
           return JSON.parse(saved, (key, value) =>
@@ -109,10 +120,12 @@ const AICourseGenerator = () => {
 
   const [inputValue, setInputValue] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [generatedCourse, setGeneratedCourse] = useState<CourseData | null>(
     () => {
       if (typeof window !== "undefined") {
-        const saved = localStorage.getItem(COURSE_STORAGE_KEY);
+        const storageKey = getStorageKey(user?.id, BASE_COURSE_KEY);
+        const saved = localStorage.getItem(storageKey);
         if (saved) {
           try {
             return JSON.parse(saved);
@@ -132,16 +145,18 @@ const AICourseGenerator = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-  }, [messages]);
+    const storageKey = getStorageKey(user?.id, BASE_CHAT_KEY);
+    localStorage.setItem(storageKey, JSON.stringify(messages));
+  }, [messages, user?.id]);
 
   useEffect(() => {
+    const storageKey = getStorageKey(user?.id, BASE_COURSE_KEY);
     if (generatedCourse) {
-      localStorage.setItem(COURSE_STORAGE_KEY, JSON.stringify(generatedCourse));
+      localStorage.setItem(storageKey, JSON.stringify(generatedCourse));
     } else {
-      localStorage.removeItem(COURSE_STORAGE_KEY);
+      localStorage.removeItem(storageKey);
     }
-  }, [generatedCourse]);
+  }, [generatedCourse, user?.id]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -168,7 +183,7 @@ const AICourseGenerator = () => {
     setIsGenerating(true);
 
     try {
-      const response: any = await aiGenerateCourse(userInput);
+      const response = await aiGenerateCourse(userInput);
 
       if (response && response.success && response.data) {
         const courseData = response.data as CourseData;
@@ -183,15 +198,27 @@ const AICourseGenerator = () => {
           )} bài học.\n\nBạn có muốn xem trước (Preview) khóa học không?`,
           "assistant"
         );
+
+        toast.success("Khóa học đã được tạo thành công");
       } else {
         throw new Error("Không thể tạo khóa học");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Generate Course Error:", error);
+
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Đã có lỗi xảy ra trong quá trình tạo khóa học";
+
       addMessage(
-        "❌ Rất xin lỗi, đã có lỗi xảy ra trong quá trình tạo khóa học. Vui lòng kiểm tra lại kết nối hoặc thử lại với một chủ đề khác cụ thể hơn.",
+        `❌ Rất xin lỗi, ${errorMessage}. Vui lòng kiểm tra lại kết nối hoặc thử lại với một chủ đề khác cụ thể hơn.`,
         "assistant"
       );
+
+      toast.error("Lỗi", {
+        description: errorMessage,
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -201,17 +228,46 @@ const AICourseGenerator = () => {
     if (!generatedCourse) return;
 
     addMessage("Đang lưu khóa học vào hệ thống...", "system");
+    setIsSaving(true);
 
-    setTimeout(() => {
+    try {
+      const response = await aiSaveCourse(generatedCourse);
+
       addMessage(
-        "✅ Đã lưu khóa học thành công! Bạn có thể tìm thấy nó trong danh sách khóa học của mình.",
+        `✅ Đã lưu khóa học thành công! Khóa học của bạn có ID: ${response.courseId}.\n\nBạn có thể tìm thấy nó trong danh sách khóa học của mình.`,
         "assistant"
       );
+
+      toast.success("Thành công", {
+        description: response.message || "Khóa học đã được lưu thành công",
+      });
+
       // Clear generated course from state and localStorage
       setGeneratedCourse(null);
       setShowPreview(false);
-      localStorage.removeItem(COURSE_STORAGE_KEY);
-    }, 1500);
+      const courseStorageKey = getStorageKey(user?.id, BASE_COURSE_KEY);
+      localStorage.removeItem(courseStorageKey);
+
+      // Optional: Redirect to courses page after 2 seconds
+      setTimeout(() => {
+        router.push("/dashboard/courses");
+      }, 2000);
+    } catch (error: any) {
+      console.error("Save Course Error:", error);
+
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Không thể lưu khóa học";
+
+      addMessage(`❌ Lỗi: ${errorMessage}. Vui lòng thử lại sau.`, "assistant");
+
+      toast.error("Lỗi khi lưu khóa học", {
+        description: errorMessage,
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const toggleChapter = (chapterIndex: number) => {
@@ -231,7 +287,8 @@ const AICourseGenerator = () => {
   const getTotalDuration = (course: CourseData) => {
     return course.chapters.reduce(
       (acc, ch) =>
-        acc + ch.lessons.reduce((sum, lesson) => sum + lesson.duration, 0),
+        acc +
+        ch.lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0),
       0
     );
   };
@@ -248,7 +305,7 @@ const AICourseGenerator = () => {
         <div className="border-b bg-card/50 backdrop-blur-sm shrink-0">
           <div className="flex items-center gap-3 p-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-              <Sparkles className="h-5 w-5 text-primary" />
+              <BotMessageSquare className="h-5 w-5 text-primary" />
             </div>
             <div>
               <h1 className="text-lg font-semibold">AI Course Generator</h1>
@@ -271,7 +328,7 @@ const AICourseGenerator = () => {
               >
                 {message.type === "assistant" && (
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <Sparkles className="h-4 w-4 text-primary" />
+                    <BotMessageSquare className="h-4 w-4 text-primary" />
                   </div>
                 )}
 
@@ -298,7 +355,7 @@ const AICourseGenerator = () => {
                 {message.type === "user" && (
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary">
                     <span className="text-sm font-semibold text-primary-foreground">
-                      U
+                      <User className="h-4 w-4" />
                     </span>
                   </div>
                 )}
@@ -308,14 +365,13 @@ const AICourseGenerator = () => {
             {isGenerating && (
               <div className="flex items-start gap-2">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <Sparkles className="h-4 w-4 text-primary" />
+                  <BotMessageSquare className="h-4 w-4 text-primary" />
                 </div>
                 <div className="rounded-2xl bg-muted px-4 py-3">
                   <div className="flex flex-col gap-2">
                     <LoadingDots />
                     <span className="text-xs text-muted-foreground">
-                      AI is generating your course, this may take a few
-                      minutes...
+                      AI đang tạo khóa học, quá trình này có thể mất vài phút...
                     </span>
                   </div>
                 </div>
@@ -324,7 +380,11 @@ const AICourseGenerator = () => {
 
             {generatedCourse && (
               <div className="flex justify-center gap-3 pt-2">
-                <Button onClick={() => setShowPreview(true)} className="gap-2">
+                <Button
+                  onClick={() => setShowPreview(true)}
+                  className="gap-2"
+                  disabled={isSaving}
+                >
                   <Eye className="h-4 w-4" />
                   {showPreview ? "Đang xem preview" : "Xem trước khóa học"}
                 </Button>
@@ -342,15 +402,18 @@ const AICourseGenerator = () => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={(e) =>
-                  e.key === "Enter" && !isGenerating && handleGenerateCourse()
+                  e.key === "Enter" &&
+                  !isGenerating &&
+                  !isSaving &&
+                  handleGenerateCourse()
                 }
                 placeholder="Nhập chủ đề khóa học (VD: Preact for Beginners)..."
-                disabled={isGenerating}
+                disabled={isGenerating || isSaving}
                 className="flex-1"
               />
               <Button
                 onClick={handleGenerateCourse}
-                disabled={isGenerating || !inputValue.trim()}
+                disabled={isGenerating || isSaving || !inputValue.trim()}
                 size="icon"
                 className="shrink-0"
               >
@@ -379,6 +442,7 @@ const AICourseGenerator = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowPreview(false)}
+                disabled={isSaving}
               >
                 <XCircle className="h-5 w-5" />
               </Button>
@@ -524,10 +588,12 @@ const AICourseGenerator = () => {
                                 <Play className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-sm">{lesson.title}</span>
                               </div>
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                <span>{lesson.duration} phút</span>
-                              </div>
+                              {lesson.duration && (
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  <span>{lesson.duration} phút</span>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -553,12 +619,26 @@ const AICourseGenerator = () => {
                   );
                 }}
                 className="flex-1"
+                disabled={isSaving}
               >
                 Hủy
               </Button>
-              <Button onClick={handleSaveCourse} className="flex-1 gap-2">
-                <Save className="h-4 w-4" />
-                Lưu khóa học
+              <Button
+                onClick={handleSaveCourse}
+                className="flex-1 gap-2"
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Đang lưu...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Lưu khóa học
+                  </>
+                )}
               </Button>
             </div>
           </div>
