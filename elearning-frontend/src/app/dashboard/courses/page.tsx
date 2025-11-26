@@ -13,14 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +32,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
+  deleteCourse,
   getAllCoursesBaseRole,
   ICourse,
   ICourseRes,
@@ -195,6 +189,24 @@ function CoursesPage() {
     totalItems
   );
 
+  const handleConfirmDelete = async () => {
+    if (!courseToDelete) return;
+
+    try {
+      await deleteCourse(courseToDelete.id);
+      toast.success(`Deleted course: ${courseToDelete.title}`);
+
+      // Đóng dialog
+      setDeleteDialogOpen(false);
+      setCourseToDelete(null);
+
+      // Reload danh sách
+      fetchCourses();
+    } catch (error) {
+      const errorMsg = getErrorMessage(error);
+      toast.error(errorMsg);
+    }
+  };
   return (
     <>
       {/* Header Section */}
@@ -381,18 +393,62 @@ function CoursesPage() {
 
       {/* Courses Grid */}
       {isLoading && data.length === 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2">
           {Array.from({ length: 8 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden flex flex-col">
-              <Skeleton className="h-40 w-full" />
-              <div className="p-4 flex flex-col flex-grow">
-                <Skeleton className="h-4 w-3/4 mb-2" />
-                <Skeleton className="h-3 w-full mb-1" />
-                <Skeleton className="h-3 w-2/3 mb-3" />
-                <Skeleton className="h-4 w-1/2 mb-3" />
-                <Skeleton className="h-3 w-full mb-3" />
-                <Skeleton className="h-3 w-2/3 mb-4" />
-                <Skeleton className="h-9 w-full" />
+            <Card
+              key={i}
+              className="group relative overflow-hidden transition-all duration-500 border-border/50 bg-card/50 backdrop-blur-sm"
+            >
+              {/* Gradient border */}
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/30 to-primary/0 opacity-40 blur-xl" />
+              <div className="absolute inset-[1px] bg-card rounded-[inherit] z-[1]" />
+
+              <div className="relative z-[2]">
+                {/* Thumbnail Skeleton */}
+                <div className="relative block aspect-[21/9] overflow-hidden bg-muted/20">
+                  <Skeleton className="absolute inset-0 w-full h-full" />
+
+                  {/* Fake Badges */}
+                  <div className="absolute top-4 left-4 flex gap-2">
+                    <Skeleton className="h-5 w-16 rounded-full bg-white/20" />
+                    <Skeleton className="h-5 w-16 rounded-full bg-white/20" />
+                  </div>
+
+                  {/* Fake Quick Actions */}
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    <Skeleton className="h-9 w-9 rounded-full bg-white/20" />
+                    <Skeleton className="h-9 w-9 rounded-full bg-white/20" />
+                  </div>
+
+                  {/* Bottom info bar */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/30 to-transparent">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-4 w-24 bg-white/30" />
+                      <Skeleton className="h-4 w-20 bg-white/30" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Body content */}
+                <div className="p-6 space-y-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+
+                  {/* Instructor */}
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  </div>
+
+                  {/* Button */}
+                  <Skeleton className="h-10 w-full rounded-md" />
+                </div>
               </div>
             </Card>
           ))}
@@ -424,170 +480,211 @@ function CoursesPage() {
         </Card>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-6 md:grid-cols-2">
             {data.map((course) => (
               <Card
                 key={course.id}
-                className="group overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02] flex flex-col cursor-pointer"
+                className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl border-border/50 bg-card/50 backdrop-blur-sm"
               >
-                {/* Course Thumbnail */}
-                <div className="relative h-40 overflow-hidden bg-gradient-to-br from-primary/90 to-primary">
-                  {course.thumbnail ? (
-                    <Image
-                      src={course.thumbnail || ""}
-                      alt={course.title}
-                      width={400}
-                      height={160}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <div className="rounded-lg bg-white/20 p-3 backdrop-blur-sm">
-                        <BookOpen className="h-8 w-8 text-white" />
+                {/* Animated gradient border on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/50 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-xl" />
+                <div className="absolute inset-[1px] bg-card rounded-[inherit] z-[1]" />
+
+                {/* Content wrapper */}
+                <div className="relative z-[2]">
+                  {/* Course Thumbnail */}
+                  <Link
+                    href={`/course/${course.id}`}
+                    className="relative block aspect-[21/9] overflow-hidden bg-gradient-to-br from-primary/20 via-primary/10 to-background"
+                  >
+                    {course.thumbnail ? (
+                      <>
+                        <Image
+                          src={course.thumbnail}
+                          alt={course.title}
+                          fill
+                          className="object-cover transition-all duration-700 group-hover:scale-110"
+                        />
+                        {/* Animated shine effect */}
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex h-full items-center justify-center relative overflow-hidden">
+                        {/* Animated background particles */}
+                        <div className="absolute inset-0">
+                          <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+                          <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-primary/5 rounded-full blur-3xl animate-pulse delay-700" />
+                        </div>
+                        <BookOpen className="relative h-20 w-20 text-primary/40 group-hover:text-primary/60 transition-all duration-500 group-hover:scale-110 group-hover:rotate-12" />
+                      </div>
+                    )}
+
+                    {/* Overlay gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                    {/* Badges with stagger animation */}
+                    <div className="absolute top-4 left-4 flex gap-2">
+                      <Badge
+                        className={cn(
+                          "text-xs font-semibold shadow-lg backdrop-blur-md border-0 transition-all duration-500",
+                          "group-hover:scale-110 group-hover:shadow-xl",
+                          STATUS_COLORS[course.status]
+                        )}
+                      >
+                        {course.status}
+                      </Badge>
+                      <Badge
+                        className={cn(
+                          "text-xs font-semibold shadow-lg backdrop-blur-md border-0 transition-all duration-500 delay-75",
+                          "group-hover:scale-110 group-hover:shadow-xl",
+                          LEVEL_COLORS[course.level]
+                        )}
+                      >
+                        {course.level}
+                      </Badge>
+                    </div>
+
+                    {/* Quick actions with slide-in animation */}
+                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-4 group-hover:translate-x-0">
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="h-9 w-9 bg-background/95 backdrop-blur-md shadow-xl hover:bg-background hover:scale-110 transition-all duration-300"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          router.push(`/dashboard/courses/${course.id}/edit`);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          asChild
+                          onClick={(e) => e.preventDefault()}
+                        >
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="h-9 w-9 bg-background/95 backdrop-blur-md shadow-xl hover:bg-background hover:scale-110 transition-all duration-300"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => router.push(`/course/${course.id}`)}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/courses/${course.id}/edit`
+                              )
+                            }
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => {
+                              setCourseToDelete(course);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Bottom info bar slide up on hover */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-500 bg-gradient-to-t from-black/90 to-transparent">
+                      <div className="flex items-center justify-between text-white/90">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-4 w-4" />
+                            <span className="text-sm font-medium">
+                              {course.duration}h
+                            </span>
+                          </div>
+                          <div className="w-px h-4 bg-white/20" />
+                          <div className="flex items-center gap-1.5">
+                            <Users className="h-4 w-4" />
+                            <span className="text-sm font-medium">
+                              {course._count?.enrollments || 0}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-xs bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-full">
+                          Click to view
+                        </div>
                       </div>
                     </div>
-                  )}
+                  </Link>
 
-                  {/* Overlay gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-
-                  {/* Action Menu */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="h-8 w-8 bg-background/80 backdrop-blur-sm"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => router.push(`/course/${course.id}`)}
-                        >
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            router.push(`/dashboard/courses/${course.id}/edit`)
-                          }
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => {
-                            setCourseToDelete(course);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  {/* Badges */}
-                  <div className="absolute bottom-2 left-2 right-2 flex gap-1.5 flex-wrap">
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        "shadow-md border font-semibold backdrop-blur-sm text-[10px] px-2 py-0.5 leading-tight",
-                        STATUS_COLORS[course.status]
-                      )}
-                    >
-                      {course.status}
-                    </Badge>
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        "shadow-md border font-semibold backdrop-blur-sm text-[10px] px-2 py-0.5 leading-tight",
-                        LEVEL_COLORS[course.level]
-                      )}
-                    >
-                      {course.level}
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Course Content */}
-                <div className="flex flex-col flex-grow p-4">
-                  {/* Title */}
-                  <h3 className="font-semibold text-base line-clamp-2 mb-2 group-hover:text-primary transition-colors min-h-[2.5rem]">
-                    {course.title}
-                  </h3>
-
-                  {/* Description */}
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3 min-h-[2rem]">
-                    {course.smallDescription ||
-                      "This is a great place to provide quick context about your course."}
-                  </p>
-
-                  {/* Instructor */}
-                  <div className="flex items-center gap-2 mb-3 pb-3 border-b">
-                    <Avatar className="h-5 w-5 ring-2 ring-background">
-                      <AvatarImage
-                        src={course.instructor.avatar || undefined}
-                      />
-                      <AvatarFallback className="text-[10px]">
-                        {course.instructor.fullName.substring(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {course.instructor.fullName}
-                    </span>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
-                      <span className="font-medium">{course.duration}h</span>
+                  {/* Course Content */}
+                  <div className="p-6 space-y-4">
+                    {/* Title & Description */}
+                    <div className="space-y-2">
+                      <Link
+                        href={`/course/${course.id}`}
+                        className="block group/title"
+                      >
+                        <h3 className="font-bold text-xl line-clamp-2 min-h-[3.5rem] group-hover/title:text-primary transition-colors duration-300">
+                          {course.title}
+                        </h3>
+                      </Link>
+                      <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
+                        {course.smallDescription ||
+                          "Discover what this course has to offer"}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5" />
-                      <span className="font-medium">
-                        {course._count?.enrollments || 0} students
+
+                    {/* Instructor with hover effect */}
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 group-hover:bg-muted/60 transition-all duration-300">
+                      <Avatar className="h-10 w-10 ring-2 ring-background shadow-md transition-all duration-300 group-hover:ring-primary/50 group-hover:shadow-lg">
+                        <AvatarImage
+                          src={course.instructor.avatar || undefined}
+                        />
+                        <AvatarFallback className="text-sm font-bold bg-primary/10 text-primary">
+                          {course.instructor.fullName
+                            .substring(0, 2)
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">
+                          {course.instructor.fullName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Course Instructor
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Action Button with gradient hover */}
+                    <Button
+                      className="w-full font-semibold shadow-md group-hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/courses/${course.id}/edit`);
+                      }}
+                    >
+                      <span className="relative z-10 flex items-center justify-center">
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Course
                       </span>
-                    </div>
+                      {/* Animated gradient background */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    </Button>
                   </div>
-
-                  {/* Rating */}
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="flex items-center">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <svg
-                          key={star}
-                          className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400"
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      ))}
-                    </div>
-                    <span className="text-xs font-semibold">4.9</span>
-                    <span className="text-xs text-muted-foreground">
-                      (1,890)
-                    </span>
-                  </div>
-
-                  {/* Action Button */}
-                  <Button
-                    variant="outline"
-                    className="w-full text-xs font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/dashboard/courses/${course.id}/edit`);
-                    }}
-                  >
-                    Edit Course
-                  </Button>
                 </div>
               </Card>
             ))}
@@ -637,7 +734,10 @@ function CoursesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

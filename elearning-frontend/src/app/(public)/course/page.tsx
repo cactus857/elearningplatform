@@ -429,7 +429,7 @@ export default function CoursesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Explore Courses</h1>
+          <h1 className="text-3xl font-bold mb-2 mt-6">Explore Courses</h1>
           <p className="text-muted-foreground">
             Discover{" "}
             <span className="font-semibold text-foreground">{totalItems}</span>{" "}
@@ -571,7 +571,7 @@ export default function CoursesPage() {
           )}
 
           {/* Pagination Controls */}
-          <div className="flex items-center justify-between gap-8 mt-8">
+          <div className="flex items-center justify-between gap-8 mt-8 mb-5">
             <div className="flex items-center gap-3">
               <span className="text-sm text-muted-foreground whitespace-nowrap">
                 Rows per page

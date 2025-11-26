@@ -5,7 +5,7 @@ export const SaveGeneratedCourseBodySchema = z
   .object({
     title: z.string(),
     description: z.string(),
-    thumbnail: z.url(),
+    thumbnail: z.url().nullable().optional(),
     duration: z.number(),
     level: z.enum([CourseLevel.Beginner, CourseLevel.Intermediate, CourseLevel.Advanced]),
     status: z.enum([CourseStatus.Archived, CourseStatus.Draft, CourseStatus.Published]),

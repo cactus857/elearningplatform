@@ -224,6 +224,11 @@ export const updateCourse = async (
   return response.data;
 };
 
+// Course Delete
+export const deleteCourse = async (courseId: string): Promise<void> => {
+  await api.delete(`${API_ENDPOINT.COURSES}/${courseId}`);
+};
+
 // ============= CHAPTER APIs =============
 export const createChapter = async (
   data: CreateChapterDto

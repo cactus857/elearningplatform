@@ -20,7 +20,7 @@ export interface IAIChapter {
 export interface IAICourseOutline {
   title: string;
   description: string;
-  thumbnail: string;
+  thumbnail?: string | null;
   duration: number;
   level: CourseLevel;
   status: CourseStatus;

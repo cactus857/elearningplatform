@@ -32,7 +32,11 @@ export class CoursePlannerNode {
             Guidelines:
             - Create 4-6 chapters that build upon each other progressively
             - Ensure logical flow from beginner to advanced concepts
-            - Make the thumbnail prompt vivid and specific for AI image generation (describe visual elements, colors, style, mood)
+            - IMPORTANT:
+              The thumbnail prompt must follow these rules:
+              - It must describe only the image to generate (not instruction text)
+              - It must be short but high-quality (1–3 sentences)
+              - It must follow a professional image prompt structure
             - Consider modern teaching methodologies
             - Focus on practical, hands-on learning`,
           },
