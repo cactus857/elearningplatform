@@ -29,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { aiGenerateCourse } from "@/services/ai.service";
+import Image from "next/image";
 
 type MessageType = "user" | "assistant" | "system";
 
@@ -68,15 +69,25 @@ interface Lesson {
 }
 
 const STORAGE_KEY = "chat_history";
+const COURSE_STORAGE_KEY = "generated_course";
+
+// Loading dots animation component
+const LoadingDots = () => {
+  return (
+    <div className="flex gap-1">
+      <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+      <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+      <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+    </div>
+  );
+};
 
 const AICourseGenerator = () => {
-  // 1. Load messages from LocalStorage on initial render
   const [messages, setMessages] = useState<Message[]>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         try {
-          // Parse date strings back to Date objects
           return JSON.parse(saved, (key, value) =>
             key === "timestamp" ? new Date(value) : value
           );
@@ -99,7 +110,19 @@ const AICourseGenerator = () => {
   const [inputValue, setInputValue] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCourse, setGeneratedCourse] = useState<CourseData | null>(
-    null
+    () => {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem(COURSE_STORAGE_KEY);
+        if (saved) {
+          try {
+            return JSON.parse(saved);
+          } catch (e) {
+            console.error("Failed to parse generated course", e);
+          }
+        }
+      }
+      return null;
+    }
   );
   const [expandedChapters, setExpandedChapters] = useState<Set<number>>(
     new Set()
@@ -108,20 +131,27 @@ const AICourseGenerator = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 2. Save messages to LocalStorage whenever they change
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
 
   useEffect(() => {
+    if (generatedCourse) {
+      localStorage.setItem(COURSE_STORAGE_KEY, JSON.stringify(generatedCourse));
+    } else {
+      localStorage.removeItem(COURSE_STORAGE_KEY);
+    }
+  }, [generatedCourse]);
+
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isGenerating]);
 
   const addMessage = (content: string, type: MessageType) => {
     const newMessage: Message = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       type,
       content,
       timestamp: new Date(),
@@ -137,19 +167,11 @@ const AICourseGenerator = () => {
     addMessage(userInput, "user");
     setIsGenerating(true);
 
-    addMessage(
-      "Đang kết nối với AI để tạo khóa học... Quá trình này có thể mất vài phút.",
-      "system"
-    );
-
     try {
-      // 3. Call Real API
       const response: any = await aiGenerateCourse(userInput);
 
-      // response = { success: true, data: { ... } }
       if (response && response.success && response.data) {
         const courseData = response.data as CourseData;
-
         setGeneratedCourse(courseData);
 
         addMessage(
@@ -185,8 +207,10 @@ const AICourseGenerator = () => {
         "✅ Đã lưu khóa học thành công! Bạn có thể tìm thấy nó trong danh sách khóa học của mình.",
         "assistant"
       );
+      // Clear generated course from state and localStorage
       setGeneratedCourse(null);
       setShowPreview(false);
+      localStorage.removeItem(COURSE_STORAGE_KEY);
     }, 1500);
   };
 
@@ -213,7 +237,7 @@ const AICourseGenerator = () => {
   };
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-[calc(100vh-4rem)] bg-background overflow-hidden">
       {/* Main Chat Area */}
       <div
         className={`flex flex-col ${
@@ -221,7 +245,7 @@ const AICourseGenerator = () => {
         } transition-all duration-300`}
       >
         {/* Header */}
-        <div className="border-b bg-card/50 backdrop-blur-sm">
+        <div className="border-b bg-card/50 backdrop-blur-sm shrink-0">
           <div className="flex items-center gap-3 p-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
               <Sparkles className="h-5 w-5 text-primary" />
@@ -236,36 +260,27 @@ const AICourseGenerator = () => {
         </div>
 
         {/* Messages Area */}
-        <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-          <div className="mx-2 max-w-3xl space-y-4">
+        <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
+          <div className="mx-auto max-w-3xl space-y-4">
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${
+                className={`flex gap-2 ${
                   message.type === "user" ? "justify-end" : "justify-start"
                 }`}
               >
                 {message.type === "assistant" && (
-                  <div className="mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
                     <Sparkles className="h-4 w-4 text-primary" />
                   </div>
                 )}
 
-                {message.type === "assistant" &&
-                  message.content.startsWith("❌") && (
-                    <div className="mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/10">
-                      <AlertCircle className="h-4 w-4 text-destructive" />
-                    </div>
-                  )}
-
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                     message.type === "user"
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-primary text-primary-foreground ml-auto"
                       : message.type === "system"
                       ? "bg-muted/50 text-muted-foreground italic"
-                      : message.content.startsWith("❌")
-                      ? "bg-destructive/10 text-destructive-foreground"
                       : "bg-muted"
                   }`}
                 >
@@ -281,7 +296,7 @@ const AICourseGenerator = () => {
                 </div>
 
                 {message.type === "user" && (
-                  <div className="ml-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary">
                     <span className="text-sm font-semibold text-primary-foreground">
                       U
                     </span>
@@ -293,32 +308,33 @@ const AICourseGenerator = () => {
             {isGenerating && (
               <div className="flex items-start gap-2">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <Sparkles className="h-4 w-4 text-primary" />
                 </div>
                 <div className="rounded-2xl bg-muted px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm">
-                      AI đang suy nghĩ và viết nội dung...
+                  <div className="flex flex-col gap-2">
+                    <LoadingDots />
+                    <span className="text-xs text-muted-foreground">
+                      AI is generating your course, this may take a few
+                      minutes...
                     </span>
                   </div>
                 </div>
               </div>
             )}
 
-            {generatedCourse && !showPreview && (
-              <div className="flex justify-center gap-3">
+            {generatedCourse && (
+              <div className="flex justify-center gap-3 pt-2">
                 <Button onClick={() => setShowPreview(true)} className="gap-2">
                   <Eye className="h-4 w-4" />
-                  Xem trước khóa học
+                  {showPreview ? "Đang xem preview" : "Xem trước khóa học"}
                 </Button>
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         {/* Input Area */}
-        <div className="border-t bg-card/50 backdrop-blur-sm p-4">
+        <div className="border-t bg-card/50 backdrop-blur-sm p-4 shrink-0">
           <div className="mx-auto max-w-3xl">
             <div className="flex gap-2">
               <Input
@@ -349,190 +365,201 @@ const AICourseGenerator = () => {
         </div>
       </div>
 
+      {/* Preview Panel */}
       {showPreview && generatedCourse && (
-        <div className="w-1/2 border-l bg-background">
-          <div className="flex h-full flex-col">
-            {/* Preview Header */}
-            <div className="border-b bg-card/50 backdrop-blur-sm p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-semibold">Preview Khóa học</h2>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowPreview(false)}
-                >
-                  <XCircle className="h-5 w-5" />
-                </Button>
+        <div className="w-1/2 border-l bg-background flex flex-col">
+          {/* Preview Header */}
+          <div className="border-b bg-card/50 backdrop-blur-sm p-4 shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold">Preview Khóa học</h2>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowPreview(false)}
+              >
+                <XCircle className="h-5 w-5" />
+              </Button>
             </div>
+          </div>
 
-            {/* Preview Content */}
-            <ScrollArea className="flex-1">
-              <div className="p-6 space-y-6">
-                {/* Course Header */}
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-2xl mb-2">
-                          {generatedCourse.title}
-                        </CardTitle>
-                        <CardDescription className="text-base">
-                          {generatedCourse.smallDescription}
-                        </CardDescription>
-                      </div>
-                      <Badge variant="secondary">{generatedCourse.level}</Badge>
+          {/* Preview Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-6">
+              {/* Course Header */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <CardTitle className="text-2xl mb-2">
+                        {generatedCourse.title}
+                      </CardTitle>
+                      <CardDescription className="text-base">
+                        {generatedCourse.smallDescription}
+                      </CardDescription>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <BookOpen className="h-4 w-4" />
-                        <span>{generatedCourse.chapters.length} chương</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Play className="h-4 w-4" />
-                        <span>{getTotalLessons(generatedCourse)} bài học</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span>{getTotalDuration(generatedCourse)} phút</span>
-                      </div>
+                    <Badge variant="secondary">{generatedCourse.level}</Badge>
+                  </div>
+
+                  {/* Thumbnail Image */}
+                  {generatedCourse.thumbnail && (
+                    <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-muted">
+                      <Image
+                        src={generatedCourse.thumbnail}
+                        alt={generatedCourse.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        quality={90}
+                        priority={false}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
                     </div>
-                    <Separator />
-                    <div>
-                      <h4 className="font-semibold mb-2">Mô tả</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {generatedCourse.description}
-                      </p>
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <BookOpen className="h-4 w-4" />
+                      <span>{generatedCourse.chapters.length} chương</span>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="flex items-center gap-1">
+                      <Play className="h-4 w-4" />
+                      <span>{getTotalLessons(generatedCourse)} bài học</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      <span>{getTotalDuration(generatedCourse)} phút</span>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div>
+                    <h4 className="font-semibold mb-2">Mô tả</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {generatedCourse.description}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
 
-                {/* What You'll Learn */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">
-                      Bạn sẽ học được gì
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {generatedCourse.whatYouWillLearn.map((item, index) => (
-                        <li
-                          key={index}
-                          className="flex items-start gap-2 text-sm"
-                        >
-                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
+              {/* What You'll Learn */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Bạn sẽ học được gì</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {generatedCourse.whatYouWillLearn.map((item, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start gap-2 text-sm"
+                      >
+                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
 
-                {/* Requirements */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Yêu cầu</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {generatedCourse.requirements.map((item, index) => (
-                        <li
-                          key={index}
-                          className="flex items-start gap-2 text-sm"
-                        >
-                          <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
+              {/* Requirements */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Yêu cầu</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {generatedCourse.requirements.map((item, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start gap-2 text-sm"
+                      >
+                        <AlertCircle className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
 
-                {/* Chapters */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Nội dung khóa học</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {generatedCourse.chapters.map((chapter, chapterIndex) => (
-                      <div key={chapterIndex} className="border rounded-lg">
-                        <button
-                          onClick={() => toggleChapter(chapterIndex)}
-                          className="flex w-full items-center justify-between p-4 text-left hover:bg-accent transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            {expandedChapters.has(chapterIndex) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                            <div>
-                              <div className="font-semibold">
-                                {chapter.title}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {chapter.lessons.length} bài học
-                              </div>
+              {/* Chapters */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Nội dung khóa học</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {generatedCourse.chapters.map((chapter, chapterIndex) => (
+                    <div key={chapterIndex} className="border rounded-lg">
+                      <button
+                        onClick={() => toggleChapter(chapterIndex)}
+                        className="flex w-full items-center justify-between p-4 text-left hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          {expandedChapters.has(chapterIndex) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                          <div>
+                            <div className="font-semibold">{chapter.title}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {chapter.lessons.length} bài học
                             </div>
                           </div>
-                        </button>
+                        </div>
+                      </button>
 
-                        {expandedChapters.has(chapterIndex) && (
-                          <div className="border-t bg-muted/30">
-                            {chapter.lessons.map((lesson, lessonIndex) => (
-                              <div
-                                key={lessonIndex}
-                                className="flex items-center justify-between p-4 pl-12 hover:bg-accent/50 transition-colors"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Play className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm">
-                                    {lesson.title}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                  <Clock className="h-3 w-3" />
-                                  <span>{lesson.duration} phút</span>
-                                </div>
+                      {expandedChapters.has(chapterIndex) && (
+                        <div className="border-t bg-muted/30">
+                          {chapter.lessons.map((lesson, lessonIndex) => (
+                            <div
+                              key={lessonIndex}
+                              className="flex items-center justify-between p-4 pl-12 hover:bg-accent/50 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <Play className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">{lesson.title}</span>
                               </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </div>
-            </ScrollArea>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                <span>{lesson.duration} phút</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
-            {/* Preview Footer */}
-            <div className="border-t bg-card/50 backdrop-blur-sm p-4">
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowPreview(false);
-                    setGeneratedCourse(null);
-                    addMessage(
-                      "Bạn có thể tạo khóa học mới bằng cách nhập chủ đề khác.",
-                      "assistant"
-                    );
-                  }}
-                  className="flex-1"
-                >
-                  Hủy
-                </Button>
-                <Button onClick={handleSaveCourse} className="flex-1 gap-2">
-                  <Save className="h-4 w-4" />
-                  Lưu khóa học
-                </Button>
-              </div>
+          {/* Preview Footer */}
+          <div className="border-t bg-card/50 backdrop-blur-sm p-4 shrink-0">
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPreview(false);
+                  setGeneratedCourse(null);
+                  addMessage(
+                    "Bạn có thể tạo khóa học mới bằng cách nhập chủ đề khác.",
+                    "assistant"
+                  );
+                }}
+                className="flex-1"
+              >
+                Hủy
+              </Button>
+              <Button onClick={handleSaveCourse} className="flex-1 gap-2">
+                <Save className="h-4 w-4" />
+                Lưu khóa học
+              </Button>
             </div>
           </div>
         </div>
