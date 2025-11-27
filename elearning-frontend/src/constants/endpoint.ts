@@ -24,4 +24,5 @@ export const API_ENDPOINT = {
   QUIZZES: "/quizzes",
   ENROLLMENTS: "/enrollments",
   AI_COURSE: "/ai/courses",
+  AI_QUIZ: "/ai/quizzes",
 } as const;

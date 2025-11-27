@@ -1,4 +1,3 @@
-// services/ai.service.ts
 import api from "@/utils/api";
 import { CourseLevel, CourseStatus } from "./course.service";
 import { API_ENDPOINT } from "@/constants/endpoint";
@@ -52,6 +51,90 @@ export const aiSaveCourse = async (
   const response = await api.post<IAISaveCourseResponse>(
     API_ENDPOINT.AI_COURSE + "/save",
     courseData
+  );
+  return response.data;
+};
+
+// ==================== AI GENERATE QUIZ ====================
+
+export type QuizDifficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+export type QuestionDifficulty = "EASY" | "MEDIUM" | "HARD";
+
+export interface IGenerateQuizFromCourseBody {
+  courseId: string;
+  chapterIds?: string[]; // If empty, use all chapters
+  numberOfQuestions: number; // 1-50
+  difficulty: QuizDifficulty;
+}
+
+export interface IQuizQuestion {
+  text: string;
+  options: string[]; // 2-6 options
+  correctAnswerIndex: number;
+  explanation?: string;
+  difficulty: QuestionDifficulty;
+  topic: string;
+}
+
+export interface IGeneratedQuiz {
+  title: string;
+  description: string;
+  timeLimitMinutes: number | null;
+  passingScore: number;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
+  showCorrectAnswers: boolean;
+  questions: IQuizQuestion[];
+}
+
+export interface ISaveQuizBody {
+  title: string;
+  courseId: string;
+  chapterId?: string | null;
+  timeLimitMinutes?: number | null;
+  passingScore: number;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
+  showCorrectAnswers: boolean;
+  questions: Array<{
+    text: string;
+    options: string[];
+    correctAnswerIndex: number;
+    explanation?: string;
+  }>;
+}
+
+export interface ISaveQuizResponse {
+  quizId: string;
+  message: string;
+}
+
+/**
+ * Generate quiz from course content using AI
+ * @param data - Course ID, chapters, number of questions, difficulty
+ * @returns Generated quiz with questions
+ */
+export const aiGenerateQuizFromCourse = async (
+  data: IGenerateQuizFromCourseBody
+): Promise<IGeneratedQuiz> => {
+  const response = await api.post<IGeneratedQuiz>(
+    API_ENDPOINT.AI_QUIZ + "/generate-from-course",
+    data
+  );
+  return response.data;
+};
+
+/**
+ * Save generated quiz to database
+ * @param data - Quiz data with questions
+ * @returns Quiz ID and success message
+ */
+export const aiSaveQuiz = async (
+  data: ISaveQuizBody
+): Promise<ISaveQuizResponse> => {
+  const response = await api.post<ISaveQuizResponse>(
+    API_ENDPOINT.AI_QUIZ + "/save",
+    data
   );
   return response.data;
 };
