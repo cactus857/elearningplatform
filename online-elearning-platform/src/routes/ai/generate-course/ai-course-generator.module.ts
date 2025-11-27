@@ -6,17 +6,19 @@ import { AiCourseGeneratorController } from './ai-course-generator.controller'
 
 // Services
 import { AiCourseGeneratorService } from './ai-course-generator.service'
-import { YouTubeService } from './integrations/youtube.service'
-import { GuruLabService } from './integrations/gurulab.service'
+import { YouTubeService } from '../integrations/youtube.service'
+import { GuruLabService } from '../integrations/gurulab.service'
 
 // Workflow
-import { CourseGeneratorWorkflow } from './workflows/course-generator.workflow'
+import { CourseGeneratorWorkflow } from '../workflows/course-generator.workflow'
 
 // Nodes
-import { CoursePlannerNode } from './nodes/course-planner.node'
-import { ChapterGeneratorNode } from './nodes/chapter-generator.node'
-import { ThumbnailGeneratorNode } from './nodes/thumbnail-generator.node'
-import { VideoFetcherNode } from './nodes/video-fetcher.node'
+import { CoursePlannerNode } from '../nodes/course/course-planner.node'
+import { ChapterGeneratorNode } from '../nodes/course/chapter-generator.node'
+import { ThumbnailGeneratorNode } from '../nodes/course/thumbnail-generator.node'
+
+import { VideoFetcherNode } from '../nodes/course/video-fetcher.node'
+
 import { AiCourseGeneratorRepository } from './ai-course-generator.repository'
 
 @Module({

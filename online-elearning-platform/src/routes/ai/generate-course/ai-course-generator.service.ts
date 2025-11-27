@@ -1,8 +1,8 @@
 import { ForbiddenException, Injectable, Logger } from '@nestjs/common'
-import { CourseGeneratorWorkflow, GeneratedCourse } from './workflows/course-generator.workflow'
 import { AiCourseGeneratorRepository } from './ai-course-generator.repository'
 import { SaveGeneratedCourseBodyType } from './ai-course-generator.model'
 import { RoleName } from 'src/shared/constants/role.constants'
+import { CourseGeneratorWorkflow, GeneratedCourse } from '../workflows/course-generator.workflow'
 
 export interface StreamUpdate {
   type: 'planning' | 'chapter' | 'thumbnail' | 'video' | 'complete' | 'error'

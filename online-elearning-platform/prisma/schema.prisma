@@ -280,6 +280,7 @@ model Question {
   text               String
   options            String[]
   correctAnswerIndex Int
+  explanation        String?
 
   quizId String @db.ObjectId
   quiz   Quiz   @relation(fields: [quizId], references: [id])

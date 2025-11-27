@@ -17,7 +17,8 @@ import { ChapterModule } from './routes/chapter/chapter.module'
 import { LessonModule } from './routes/lesson/lesson.module'
 import { EnrollmentModule } from './routes/enrollment/enrollment.module'
 import { QuizzModule } from './routes/quizz/quizz.module'
-import { AiCourseGeneratorModule } from './routes/ai/ai-course-generator.module'
+import { AiQuizGeneratorModule } from './routes/ai/generate-quiz/ai-quiz-generator.module'
+import { AiCourseGeneratorModule } from './routes/ai/generate-course/ai-course-generator.module'
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AiCourseGeneratorModule } from './routes/ai/ai-course-generator.module'
     EnrollmentModule,
     QuizzModule,
     AiCourseGeneratorModule,
+    AiQuizGeneratorModule,
   ],
   controllers: [AppController],
   providers: [

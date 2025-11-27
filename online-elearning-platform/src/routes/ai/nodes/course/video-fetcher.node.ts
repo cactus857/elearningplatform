@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { task } from '@langchain/langgraph'
-import { YouTubeService } from '../integrations/youtube.service'
-import { AILessonType } from '../workflows/types/schema.types'
+import { YouTubeService } from '../../integrations/youtube.service'
+import { AILessonType } from '../../workflows/types/schema.types'
 
 @Injectable()
 export class VideoFetcherNode {

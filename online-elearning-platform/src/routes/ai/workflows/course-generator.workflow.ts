@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { AIChapterType } from './types/schema.types'
-import { CoursePlannerNode } from '../nodes/course-planner.node'
-import { VideoFetcherNode } from '../nodes/video-fetcher.node'
-import { ThumbnailGeneratorNode } from '../nodes/thumbnail-generator.node'
-import { ChapterGeneratorNode } from '../nodes/chapter-generator.node'
+import { CoursePlannerNode } from '../nodes/course/course-planner.node'
+import { VideoFetcherNode } from '../nodes/course/video-fetcher.node'
+import { ThumbnailGeneratorNode } from '../nodes/course/thumbnail-generator.node'
+import { ChapterGeneratorNode } from '../nodes/course/chapter-generator.node'
 import { entrypoint } from '@langchain/langgraph'
 
 export interface GeneratedCourse {

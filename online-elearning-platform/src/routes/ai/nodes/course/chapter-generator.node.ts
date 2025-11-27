@@ -2,7 +2,7 @@ import { task } from '@langchain/langgraph'
 import { ChatOpenAI } from '@langchain/openai'
 import { Injectable, Logger } from '@nestjs/common'
 import envConfig from 'src/shared/config'
-import { AIChapterSchema, AIChapterType } from '../workflows/types/schema.types'
+import { AIChapterSchema, AIChapterType } from '../../workflows/types/schema.types'
 
 @Injectable()
 export class ChapterGeneratorNode {

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { GuruLabService } from '../integrations/gurulab.service'
+import { GuruLabService } from '../../integrations/gurulab.service'
 import { task } from '@langchain/langgraph'
 
 @Injectable()

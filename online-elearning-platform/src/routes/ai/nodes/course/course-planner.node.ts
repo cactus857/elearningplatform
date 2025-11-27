@@ -3,7 +3,7 @@ import { ChatOpenAI } from '@langchain/openai'
 import { task } from '@langchain/langgraph'
 
 import envConfig from 'src/shared/config'
-import { AICourseOutlineSchema, AICourseOutlineType } from '../workflows/types/schema.types'
+import { AICourseOutlineSchema, AICourseOutlineType } from '../../workflows/types/schema.types'
 
 @Injectable()
 export class CoursePlannerNode {
@@ -35,7 +35,7 @@ export class CoursePlannerNode {
             - IMPORTANT:
               The thumbnail prompt must follow these rules:
               - It must describe only the image to generate (not instruction text)
-              - It must be short but high-quality (1–3 sentences)
+              - It must be short but high-quality (1-3 sentences)
               - It must follow a professional image prompt structure
             - Consider modern teaching methodologies
             - Focus on practical, hands-on learning`,
