@@ -96,6 +96,9 @@ export interface ISaveQuizBody {
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   showCorrectAnswers: boolean;
+  availableFrom?: string | null;
+  availableTo?: string | null;
+  maxAttempts?: number | null;
   questions: Array<{
     text: string;
     options: string[];

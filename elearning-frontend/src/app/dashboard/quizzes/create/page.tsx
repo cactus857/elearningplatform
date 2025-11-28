@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -62,6 +63,7 @@ const quizSchema = z.object({
           .min(2)
           .max(6),
         correctAnswerIndex: z.number().min(0),
+        explanation: z.string().optional(),
         type: z.enum(["MULTIPLE_CHOICE", "TRUE_FALSE"]),
       })
     )
@@ -133,6 +135,7 @@ export default function CreateQuizPage() {
       text: "",
       options: ["", ""],
       correctAnswerIndex: 0,
+      explanation: "",
       type: "MULTIPLE_CHOICE",
     });
   };
@@ -142,6 +145,7 @@ export default function CreateQuizPage() {
       text: "",
       options: ["True", "False"],
       correctAnswerIndex: 0,
+      explanation: "",
       type: "TRUE_FALSE",
     });
   };
@@ -157,25 +161,10 @@ export default function CreateQuizPage() {
   const addOption = (questionIndex: number) => {
     const question = fields[questionIndex];
     if (question.options.length < 6) {
-      update(questionIndex, {
-        ...question,
-        options: [...question.options, ""],
-      });
+      const newOptions = [...question.options, ""];
+      // FIX: Giữ nguyên các giá trị khác, chỉ cập nhật options
+      form.setValue(`questions.${questionIndex}.options`, newOptions);
     }
-  };
-
-  const updateOption = (
-    questionIndex: number,
-    optionIndex: number,
-    value: string
-  ) => {
-    const question = fields[questionIndex];
-    const newOptions = [...question.options];
-    newOptions[optionIndex] = value;
-    update(questionIndex, {
-      ...question,
-      options: newOptions,
-    });
   };
 
   const removeOption = (questionIndex: number, optionIndex: number) => {
@@ -192,11 +181,12 @@ export default function CreateQuizPage() {
         newCorrectIndex--;
       }
 
-      update(questionIndex, {
-        ...question,
-        options: newOptions,
-        correctAnswerIndex: newCorrectIndex,
-      });
+      // FIX: Cập nhật từng field riêng biệt thay vì dùng update
+      form.setValue(`questions.${questionIndex}.options`, newOptions);
+      form.setValue(
+        `questions.${questionIndex}.correctAnswerIndex`,
+        newCorrectIndex
+      );
     }
   };
 
@@ -220,6 +210,7 @@ export default function CreateQuizPage() {
           text: q.text,
           options: q.options,
           correctAnswerIndex: q.correctAnswerIndex,
+          explanation: q.explanation || null,
         })),
       };
 
@@ -425,11 +416,10 @@ export default function CreateQuizPage() {
                               type="radio"
                               checked={field.correctAnswerIndex === optIdx}
                               onChange={() => {
-                                const question = fields[qIdx];
-                                update(qIdx, {
-                                  ...question,
-                                  correctAnswerIndex: optIdx,
-                                });
+                                form.setValue(
+                                  `questions.${qIdx}.correctAnswerIndex`,
+                                  optIdx
+                                );
                               }}
                               className="mt-3"
                             />
@@ -479,6 +469,35 @@ export default function CreateQuizPage() {
                             </Button>
                           )}
                       </div>
+
+                      {/* Explanation Field - Hiển thị khi có đáp án đúng được chọn */}
+                      <FormField
+                        control={form.control}
+                        name={`questions.${qIdx}.explanation`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              Explanation for Correct Answer{" "}
+                              <span className="text-muted-foreground text-sm">
+                                (Optional)
+                              </span>
+                            </FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...field}
+                                placeholder="Explain why this is the correct answer..."
+                                rows={3}
+                                className="resize-none"
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              This explanation will be shown to students after
+                              they submit their answer
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </CardContent>
                   </Card>
                 ))}

@@ -60,6 +60,9 @@ export class AiQuizGeneratorRepository {
           shuffleQuestions: data.shuffleQuestions,
           shuffleOptions: data.shuffleOptions,
           showCorrectAnswers: data.showCorrectAnswers,
+          availableFrom: data.availableFrom || new Date(),
+          availableTo: data.availableTo,
+          maxAttempts: data.maxAttempts,
           deletedAt: null,
         },
       })
@@ -71,6 +74,7 @@ export class AiQuizGeneratorRepository {
           text: q.text,
           options: q.options,
           correctAnswerIndex: q.correctAnswerIndex,
+          explanation: q.explanation,
         })),
       })
 

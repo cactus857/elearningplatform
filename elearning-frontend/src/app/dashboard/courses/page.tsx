@@ -7,13 +7,11 @@ import {
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,9 +25,9 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
   deleteCourse,
@@ -40,17 +38,17 @@ import {
 import { getErrorMessage } from "@/utils/error-message";
 import {
   BookOpen,
-  Clock,
-  Edit,
-  Eye,
   Filter,
-  MoreVertical,
+  Globe,
+  LayoutDashboard,
+  MoreHorizontal,
+  PenTool,
   Plus,
   Search,
   Trash2,
-  TrendingUp,
   Users,
-  X,
+  FileText,
+  Clock,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -59,692 +57,560 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 
-const LEVEL_COLORS = {
-  BEGINNER: "bg-green-500 text-white border-green-600",
-  INTERMEDIATE: "bg-blue-500 text-white border-blue-600",
-  ADVANCED: "bg-purple-500 text-white border-purple-600",
+// --- CONFIGURATION ---
+const LEVEL_STYLES = {
+  BEGINNER:
+    "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
+  INTERMEDIATE:
+    "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
+  ADVANCED:
+    "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20",
 };
 
-const STATUS_COLORS = {
-  DRAFT: "bg-yellow-500 text-white border-yellow-600",
-  PUBLISHED: "bg-green-500 text-white border-green-600",
-  ARCHIVED: "bg-red-500 text-white border-red-600",
-};
+const STATUS_TABS = [
+  { value: "all", label: "All Courses" },
+  { value: "PUBLISHED", label: "Published" },
+  { value: "DRAFT", label: "Drafts" },
+  { value: "ARCHIVED", label: "Archived" },
+];
 
 interface PaginationState {
   pageIndex: number;
   pageSize: number;
 }
 
-function CoursesPage() {
+// --- COMPONENTS ---
+
+const ProStatCard = ({
+  title,
+  value,
+  icon: Icon,
+  description,
+  colorClass,
+  borderClass,
+}: any) => (
+  <div
+    className={cn(
+      "relative overflow-hidden rounded-lg border bg-card p-6 shadow-sm transition-all hover:shadow-md",
+      borderClass
+    )}
+  >
+    <div className="flex items-center justify-between">
+      <div className="relative z-10">
+        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+          {title}
+        </p>
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="text-3xl font-bold tracking-tight text-foreground">
+            {value}
+          </span>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground font-medium">
+          {description}
+        </p>
+      </div>
+      <div
+        className={cn(
+          "flex h-12 w-12 items-center justify-center rounded-lg shadow-sm",
+          colorClass
+        )}
+      >
+        <Icon className="h-6 w-6" />
+      </div>
+    </div>
+    <Icon className="absolute -right-4 -bottom-4 h-24 w-24 opacity-5 text-foreground rotate-12" />
+  </div>
+);
+
+// 2. Main Page
+export default function CoursesPage() {
   const router = useRouter();
 
-  // Data & Loading
+  // Logic States
   const [data, setData] = useState<ICourseRes[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Pagination
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 8,
+    pageSize: 9,
   });
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
+  const [statusTab, setStatusTab] = useState("all");
   const [levelFilter, setLevelFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
 
-  // Modal
+  // Dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<ICourse | null>(null);
 
-  // Ref để chặn fetch sai trang khi vừa đổi filter
   const filterChangedRef = useRef(false);
 
+  // --- API ---
   const fetchCourses = useCallback(async () => {
     setIsLoading(true);
     try {
+      const statusParam = statusTab !== "all" ? statusTab : undefined;
       const response = await getAllCoursesBaseRole(
         pagination.pageIndex + 1,
         pagination.pageSize,
         levelFilter !== "all" ? levelFilter : undefined,
-        statusFilter !== "all" ? statusFilter : undefined,
+        statusParam,
         debouncedSearchQuery || undefined
       );
-
       setData(response.data);
       setTotalItems(response.totalItems);
     } catch (error) {
-      console.error("Error fetching courses:", error);
-      toast.error("Failed to fetch courses", {
-        description: getErrorMessage(error),
-      });
+      toast.error(getErrorMessage(error));
       setData([]);
-      setTotalItems(0);
     } finally {
       setIsLoading(false);
     }
-  }, [
-    pagination.pageIndex,
-    pagination.pageSize,
-    debouncedSearchQuery,
-    levelFilter,
-    statusFilter,
-  ]);
+  }, [pagination, debouncedSearchQuery, levelFilter, statusTab]);
 
-  // Khi search hoặc filter đổi → reset page về đầu
   useEffect(() => {
     filterChangedRef.current = true;
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  }, [debouncedSearchQuery, levelFilter, statusFilter]);
+  }, [debouncedSearchQuery, levelFilter, statusTab]);
 
-  // Khi pagination hoặc filter đổi → fetch dữ liệu
   useEffect(() => {
-    if (filterChangedRef.current && pagination.pageIndex !== 0) {
-      return; // chặn fetch sai trang khi vừa đổi filter
-    }
-
+    if (filterChangedRef.current && pagination.pageIndex !== 0) return;
     fetchCourses();
     filterChangedRef.current = false;
   }, [fetchCourses, pagination.pageIndex]);
 
-  const pageCount = Math.ceil(totalItems / pagination.pageSize);
-
-  const handlePrevPage = () => {
-    setPagination((prev) => ({
-      ...prev,
-      pageIndex: Math.max(0, prev.pageIndex - 1),
-    }));
-  };
-
-  const handleNextPage = () => {
-    setPagination((prev) => ({
-      ...prev,
-      pageIndex: Math.min(pageCount - 1, prev.pageIndex + 1),
-    }));
-  };
-
-  const handlePageSize = (size: number) => {
-    setPagination((prev) => ({
-      ...prev,
-      pageIndex: 0,
-      pageSize: size,
-    }));
-  };
-
-  const clearFilters = () => {
-    setLevelFilter("all");
-    setStatusFilter("all");
-    setSearchQuery("");
-  };
-
-  const hasActiveFilters =
-    levelFilter !== "all" || statusFilter !== "all" || searchQuery;
-
-  const startItem = pagination.pageIndex * pagination.pageSize + 1;
-  const endItem = Math.min(
-    (pagination.pageIndex + 1) * pagination.pageSize,
-    totalItems
-  );
-
+  // Helpers
   const handleConfirmDelete = async () => {
     if (!courseToDelete) return;
-
     try {
       await deleteCourse(courseToDelete.id);
-      toast.success(`Deleted course: ${courseToDelete.title}`);
-
-      // Đóng dialog
+      toast.success("Course deleted successfully");
       setDeleteDialogOpen(false);
-      setCourseToDelete(null);
-
-      // Reload danh sách
       fetchCourses();
     } catch (error) {
-      const errorMsg = getErrorMessage(error);
-      toast.error(errorMsg);
+      toast.error(getErrorMessage(error));
     }
   };
+
+  const pageCount = Math.ceil(totalItems / pagination.pageSize);
+
+  const totalStudents = data.reduce(
+    (acc, c) => acc + (c._count?.enrollments || 0),
+    0
+  );
+  const publishedCount = data.filter((c) => c.status === "PUBLISHED").length;
+
   return (
-    <>
-      {/* Header Section */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Your Courses</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage and organize your courses
-          </p>
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <Link href="/dashboard/courses/create" className={buttonVariants()}>
-            <Plus className="h-4 w-4" />
-            Create Course
+    <div className="space-y-8 pb-10">
+      {/* 1. HERO HEADER */}
+      <div className="relative overflow-hidden rounded-xl bg-slate-900 px-8 py-10 shadow-xl sm:px-10 sm:py-12">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
+
+        <div className="relative flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 rounded-md bg-indigo-500/20 px-3 py-1 text-xs font-semibold text-indigo-300 backdrop-blur-sm border border-indigo-500/30 w-fit">
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              <span>Instructor Console</span>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
+              Course Management
+            </h1>
+            <p className="max-w-xl text-slate-400">
+              Oversee your curriculum, track enrollment analytics, and manage
+              student progress.
+            </p>
+          </div>
+
+          <Link href="/dashboard/courses/create">
+            <Button
+              size="lg"
+              className="h-12 rounded-md bg-white text-slate-900 hover:bg-slate-100 font-semibold px-6 shadow-lg shadow-black/20 border-0"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              Create New Course
+            </Button>
           </Link>
         </div>
       </div>
 
-      {/* Filters & Search Section */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4">
-            {/* Search Bar */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      {/* 2. STATS GRID */}
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <ProStatCard
+          title="Total Courses"
+          value={totalItems}
+          description="Active in library"
+          icon={BookOpen}
+          colorClass="bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400"
+          borderClass="border-l-4 border-l-blue-500"
+        />
+        <ProStatCard
+          title="Total Students"
+          value={totalStudents}
+          description="Enrolled globally"
+          icon={Users}
+          colorClass="bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-400"
+          borderClass="border-l-4 border-l-violet-500"
+        />
+        <ProStatCard
+          title="Published"
+          value={publishedCount}
+          description="Live courses"
+          icon={Globe}
+          colorClass="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
+          borderClass="border-l-4 border-l-emerald-500"
+        />
+        <ProStatCard
+          title="Drafts"
+          value={data.length - publishedCount}
+          description="Pending review"
+          icon={PenTool}
+          colorClass="bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400"
+          borderClass="border-l-4 border-l-amber-500"
+        />
+      </div>
+
+      {/* 3. TOOLBAR */}
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col justify-between gap-4 border-b border-border/60 pb-1 md:flex-row md:items-center">
+          <Tabs
+            value={statusTab}
+            onValueChange={setStatusTab}
+            className="w-full md:w-auto"
+          >
+            <TabsList className="h-12 w-full justify-start rounded-none bg-transparent p-0 md:w-auto gap-2">
+              {STATUS_TABS.map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="
+                    relative h-12 rounded-none bg-transparent px-4 pb-3 pt-2 font-medium text-muted-foreground 
+                    transition-all 
+                    hover:text-foreground
+                    data-[state=active]:bg-transparent 
+                    data-[state=active]:shadow-none 
+                    data-[state=active]:text-primary 
+                    after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-full after:scale-x-0 after:bg-primary after:transition-transform data-[state=active]:after:scale-x-100
+                  "
+                >
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          {/* Controls */}
+          <div className="flex flex-1 items-center gap-3 md:max-w-md ml-auto pb-2">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-foreground transition-colors" />
               <Input
-                placeholder="Search courses by title..."
-                className="pl-9 pr-9"
+                placeholder="Search by title..."
+                className="h-10 w-full pl-9 rounded-md bg-background border-input focus-visible:ring-1"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
             </div>
 
-            {/* Filter Controls */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Filter className="h-4 w-4" />
-                <span>Filters:</span>
-              </div>
-
-              <Select value={levelFilter} onValueChange={setLevelFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="All Levels" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="BEGINNER">Beginner</SelectItem>
-                  <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
-                  <SelectItem value="ADVANCED">Advanced</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="DRAFT">Draft</SelectItem>
-                  <SelectItem value="PUBLISHED">Published</SelectItem>
-                  <SelectItem value="ARCHIVED">Archived</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {hasActiveFilters && (
-                <Button variant="ghost" size="sm" onClick={clearFilters}>
-                  <X className="h-4 w-4 mr-1" />
-                  Clear all
-                </Button>
-              )}
-            </div>
-
-            {/* Pagination Info */}
-            <div className="flex items-center justify-between pt-2 border-t">
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  Courses per page
-                </span>
-                <Select
-                  value={pagination.pageSize.toString()}
-                  onValueChange={(value) => handlePageSize(Number(value))}
-                >
-                  <SelectTrigger className="w-fit">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[4, 8, 12, 16].map((pageSize) => (
-                      <SelectItem key={pageSize} value={pageSize.toString()}>
-                        {pageSize}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="text-sm text-muted-foreground">
-                {totalItems > 0 ? (
-                  <p aria-live="polite">
-                    <span className="text-foreground font-medium">
-                      {startItem}-{endItem}
-                    </span>{" "}
-                    of{" "}
-                    <span className="text-foreground font-medium">
-                      {totalItems}
-                    </span>
-                  </p>
-                ) : (
-                  <p>No items to display</p>
-                )}
-              </div>
-            </div>
+            <Select value={levelFilter} onValueChange={setLevelFilter}>
+              <SelectTrigger className="h-10 w-[160px] rounded-md border-input bg-background px-3">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-sm font-medium">
+                    {levelFilter === "all"
+                      ? "All Levels"
+                      : LEVEL_STYLES[levelFilter as keyof typeof LEVEL_STYLES]
+                      ? levelFilter
+                      : "Level"}
+                  </span>
+                </div>
+              </SelectTrigger>
+              <SelectContent align="end" className="rounded-md">
+                <SelectItem value="all">All Levels</SelectItem>
+                <SelectItem value="BEGINNER">Beginner</SelectItem>
+                <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
+                <SelectItem value="ADVANCED">Advanced</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Stats Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalItems}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {data.length} on this page
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Published</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data.filter((c) => c.status === "PUBLISHED").length}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Live on platform
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Draft</CardTitle>
-            <Edit className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data.filter((c) => c.status === "DRAFT").length}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">In preparation</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Students
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data.reduce((sum, c) => sum + (c._count?.enrollments || 0), 0)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Across current page
-            </p>
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
-      {/* Courses Grid */}
-      {isLoading && data.length === 0 ? (
-        <div className="grid gap-6 md:grid-cols-2">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Card
-              key={i}
-              className="group relative overflow-hidden transition-all duration-500 border-border/50 bg-card/50 backdrop-blur-sm"
-            >
-              {/* Gradient border */}
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/30 to-primary/0 opacity-40 blur-xl" />
-              <div className="absolute inset-[1px] bg-card rounded-[inherit] z-[1]" />
-
-              <div className="relative z-[2]">
-                {/* Thumbnail Skeleton */}
-                <div className="relative block aspect-[21/9] overflow-hidden bg-muted/20">
-                  <Skeleton className="absolute inset-0 w-full h-full" />
-
-                  {/* Fake Badges */}
-                  <div className="absolute top-4 left-4 flex gap-2">
-                    <Skeleton className="h-5 w-16 rounded-full bg-white/20" />
-                    <Skeleton className="h-5 w-16 rounded-full bg-white/20" />
-                  </div>
-
-                  {/* Fake Quick Actions */}
-                  <div className="absolute top-4 right-4 flex gap-2">
-                    <Skeleton className="h-9 w-9 rounded-full bg-white/20" />
-                    <Skeleton className="h-9 w-9 rounded-full bg-white/20" />
-                  </div>
-
-                  {/* Bottom info bar */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/30 to-transparent">
-                    <div className="flex items-center justify-between">
-                      <Skeleton className="h-4 w-24 bg-white/30" />
-                      <Skeleton className="h-4 w-20 bg-white/30" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Body content */}
-                <div className="p-6 space-y-4">
-                  <div className="space-y-2">
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-2/3" />
-                  </div>
-
-                  {/* Instructor */}
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                  </div>
-
-                  {/* Button */}
-                  <Skeleton className="h-10 w-full rounded-md" />
-                </div>
+      {/* 4. COURSE GRID (3 COLUMNS) */}
+      {/* GRID FIX: Changed to lg:grid-cols-3 for wider cards */}
+      {isLoading ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="rounded-lg border bg-card p-4 space-y-4">
+              <Skeleton className="h-48 w-full rounded-md" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-1/2" />
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       ) : data.length === 0 ? (
-        <Card className="py-12">
-          <CardContent className="text-center">
-            <BookOpen className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">No courses found</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {hasActiveFilters
-                ? "Try adjusting your filters or search query"
-                : "Get started by creating your first course"}
-            </p>
-            {hasActiveFilters ? (
-              <Button className="mt-4" variant="outline" onClick={clearFilters}>
-                Clear Filters
-              </Button>
-            ) : (
-              <Button
-                className="mt-4"
-                onClick={() => router.push("/dashboard/courses/create")}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Create Course
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted bg-muted/20 p-12 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-background border shadow-sm mb-4">
+            <Search className="h-7 w-7 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-bold text-foreground">
+            No courses match your criteria
+          </h3>
+          <p className="text-muted-foreground mt-1 max-w-sm mb-6">
+            Try changing your filters or create a new course to get started.
+          </p>
+          <Button
+            onClick={() => {
+              setStatusTab("all");
+              setLevelFilter("all");
+              setSearchQuery("");
+            }}
+            className="rounded-md px-6"
+          >
+            Clear Filters
+          </Button>
+        </div>
       ) : (
-        <>
-          <div className="grid gap-6 md:grid-cols-2">
-            {data.map((course) => (
-              <Card
-                key={course.id}
-                className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl border-border/50 bg-card/50 backdrop-blur-sm"
-              >
-                {/* Animated gradient border on hover */}
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/50 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-xl" />
-                <div className="absolute inset-[1px] bg-card rounded-[inherit] z-[1]" />
-
-                {/* Content wrapper */}
-                <div className="relative z-[2]">
-                  {/* Course Thumbnail */}
-                  <Link
-                    href={`/course/${course.id}`}
-                    className="relative block aspect-[21/9] overflow-hidden bg-gradient-to-br from-primary/20 via-primary/10 to-background"
-                  >
-                    {course.thumbnail ? (
-                      <>
-                        <Image
-                          src={course.thumbnail}
-                          alt={course.title}
-                          fill
-                          className="object-cover transition-all duration-700 group-hover:scale-110"
-                        />
-                        {/* Animated shine effect */}
-                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex h-full items-center justify-center relative overflow-hidden">
-                        {/* Animated background particles */}
-                        <div className="absolute inset-0">
-                          <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-                          <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-primary/5 rounded-full blur-3xl animate-pulse delay-700" />
-                        </div>
-                        <BookOpen className="relative h-20 w-20 text-primary/40 group-hover:text-primary/60 transition-all duration-500 group-hover:scale-110 group-hover:rotate-12" />
-                      </div>
-                    )}
-
-                    {/* Overlay gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                    {/* Badges with stagger animation */}
-                    <div className="absolute top-4 left-4 flex gap-2">
-                      <Badge
-                        className={cn(
-                          "text-xs font-semibold shadow-lg backdrop-blur-md border-0 transition-all duration-500",
-                          "group-hover:scale-110 group-hover:shadow-xl",
-                          STATUS_COLORS[course.status]
-                        )}
-                      >
-                        {course.status}
-                      </Badge>
-                      <Badge
-                        className={cn(
-                          "text-xs font-semibold shadow-lg backdrop-blur-md border-0 transition-all duration-500 delay-75",
-                          "group-hover:scale-110 group-hover:shadow-xl",
-                          LEVEL_COLORS[course.level]
-                        )}
-                      >
-                        {course.level}
-                      </Badge>
-                    </div>
-
-                    {/* Quick actions with slide-in animation */}
-                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-4 group-hover:translate-x-0">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="h-9 w-9 bg-background/95 backdrop-blur-md shadow-xl hover:bg-background hover:scale-110 transition-all duration-300"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          router.push(`/dashboard/courses/${course.id}/edit`);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          asChild
-                          onClick={(e) => e.preventDefault()}
-                        >
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="h-9 w-9 bg-background/95 backdrop-blur-md shadow-xl hover:bg-background hover:scale-110 transition-all duration-300"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => router.push(`/course/${course.id}`)}
-                          >
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/courses/${course.id}/edit`
-                              )
-                            }
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => {
-                              setCourseToDelete(course);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-
-                    {/* Bottom info bar slide up on hover */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-full group-hover:translate-y-0 transition-transform duration-500 bg-gradient-to-t from-black/90 to-transparent">
-                      <div className="flex items-center justify-between text-white/90">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="h-4 w-4" />
-                            <span className="text-sm font-medium">
-                              {course.duration}h
-                            </span>
-                          </div>
-                          <div className="w-px h-4 bg-white/20" />
-                          <div className="flex items-center gap-1.5">
-                            <Users className="h-4 w-4" />
-                            <span className="text-sm font-medium">
-                              {course._count?.enrollments || 0}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-xs bg-white/10 backdrop-blur-sm px-2.5 py-1 rounded-full">
-                          Click to view
-                        </div>
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {data.map((course) => (
+            <div
+              key={course.id}
+              className="group flex flex-col overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300"
+            >
+              {/* Image Area */}
+              <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted border-b">
+                <Link href={`/dashboard/courses/${course.id}/edit`}>
+                  {course.thumbnail ? (
+                    <Image
+                      src={course.thumbnail}
+                      alt={course.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-muted">
+                      <div className="text-center">
+                        <LayoutDashboard className="h-10 w-10 text-muted-foreground/50 mx-auto mb-2" />
                       </div>
                     </div>
-                  </Link>
+                  )}
+                  {/* Subtle Dark Overlay on Hover */}
+                  <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/10" />
+                </Link>
 
-                  {/* Course Content */}
-                  <div className="p-6 space-y-4">
-                    {/* Title & Description */}
-                    <div className="space-y-2">
-                      <Link
-                        href={`/course/${course.id}`}
-                        className="block group/title"
-                      >
-                        <h3 className="font-bold text-xl line-clamp-2 min-h-[3.5rem] group-hover/title:text-primary transition-colors duration-300">
-                          {course.title}
-                        </h3>
-                      </Link>
-                      <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
-                        {course.smallDescription ||
-                          "Discover what this course has to offer"}
-                      </p>
-                    </div>
-
-                    {/* Instructor with hover effect */}
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 group-hover:bg-muted/60 transition-all duration-300">
-                      <Avatar className="h-10 w-10 ring-2 ring-background shadow-md transition-all duration-300 group-hover:ring-primary/50 group-hover:shadow-lg">
-                        <AvatarImage
-                          src={course.instructor.avatar || undefined}
-                        />
-                        <AvatarFallback className="text-sm font-bold bg-primary/10 text-primary">
-                          {course.instructor.fullName
-                            .substring(0, 2)
-                            .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">
-                          {course.instructor.fullName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Course Instructor
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Action Button with gradient hover */}
-                    <Button
-                      className="w-full font-semibold shadow-md group-hover:shadow-xl transition-all duration-300 relative overflow-hidden"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/dashboard/courses/${course.id}/edit`);
-                      }}
+                {/* Status Badge */}
+                <div className="absolute top-3 left-3">
+                  {course.status === "PUBLISHED" ? (
+                    <Badge className="rounded-md bg-background/90 text-emerald-600 dark:text-emerald-400 backdrop-blur-sm shadow-sm font-semibold hover:bg-background border-0">
+                      Published
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="secondary"
+                      className="rounded-md bg-background/90 text-muted-foreground backdrop-blur-sm shadow-sm font-semibold hover:bg-background border border-border/50"
                     >
-                      <span className="relative z-10 flex items-center justify-center">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit Course
-                      </span>
-                      {/* Animated gradient background */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/80 to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    </Button>
+                      Draft
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="flex flex-1 flex-col p-6">
+                <div className="mb-3 flex items-center justify-between">
+                  <span
+                    className={cn(
+                      "inline-flex items-center rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border",
+                      LEVEL_STYLES[course.level]
+                    )}
+                  >
+                    {course.level}
+                  </span>
+                </div>
+
+                <Link
+                  href={`/dashboard/courses/${course.id}/edit`}
+                  className="block group-hover:text-primary transition-colors"
+                >
+                  <h3 className="line-clamp-2 font-bold leading-snug tracking-tight text-xl min-h-[3.5rem] text-foreground">
+                    {course.title}
+                  </h3>
+                </Link>
+
+                {/* Small Description */}
+                <p className="mt-2 line-clamp-2 text-sm text-muted-foreground min-h-[2.5rem] leading-relaxed">
+                  {course.smallDescription || "No description provided."}
+                </p>
+
+                {/* Metrics */}
+                <div className="mt-5 flex items-center justify-between text-xs font-medium text-muted-foreground py-4 border-y border-dashed">
+                  <div className="flex items-center gap-1.5">
+                    <Users className="h-4 w-4" />
+                    <span>{course._count?.enrollments || 0} students</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <FileText className="h-4 w-4" />
+                    <span>{course._count.chapters} chapters</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-4 w-4" />
+                    <span>{course.duration || 0}h</span>
                   </div>
                 </div>
-              </Card>
-            ))}
-          </div>
 
-          {/* Pagination Controls */}
-          <div className="flex items-center justify-between gap-4 mt-8">
-            <div />
+                {/* Footer */}
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8 border shadow-sm">
+                      <AvatarImage
+                        src={course.instructor.avatar || undefined}
+                      />
+                      <AvatarFallback className="text-[10px] font-bold bg-muted text-muted-foreground">
+                        {course.instructor.fullName.substring(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-muted-foreground font-medium uppercase">
+                        Instructor
+                      </span>
+                      <span className="text-xs font-semibold text-foreground truncate max-w-[120px]">
+                        {course.instructor.fullName.split(" ")[0]}
+                      </span>
+                    </div>
+                  </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handlePrevPage}
-                disabled={pagination.pageIndex === 0}
-              >
-                Previous
-              </Button>
-              <div className="text-sm text-muted-foreground min-w-fit px-2">
-                Page {pagination.pageIndex + 1} of {pageCount || 1}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 rounded-md hover:bg-muted"
+                      >
+                        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="rounded-md w-48 shadow-lg border-border"
+                    >
+                      <DropdownMenuItem
+                        onClick={() => router.push(`/course/${course.id}`)}
+                        className="cursor-pointer font-medium"
+                      >
+                        <Globe className="mr-2 h-4 w-4 text-blue-500" /> View
+                        Public Page
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          router.push(`/dashboard/courses/${course.id}/edit`)
+                        }
+                        className="cursor-pointer font-medium"
+                      >
+                        <PenTool className="mr-2 h-4 w-4 text-muted-foreground" />{" "}
+                        Manage Content
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setCourseToDelete(course);
+                          setDeleteDialogOpen(true);
+                        }}
+                        className="text-destructive focus:text-destructive cursor-pointer font-medium"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete Course
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleNextPage}
-                disabled={
-                  pagination.pageIndex === pageCount - 1 || pageCount === 0
-                }
-              >
-                Next
-              </Button>
             </div>
-          </div>
-        </>
+          ))}
+        </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
+      {/* 5. PAGINATION */}
+      {totalItems > 0 && (
+        <div className="flex items-center justify-between border-t pt-4">
+          <p className="text-sm text-muted-foreground">
+            Showing{" "}
+            <span className="font-medium text-foreground">
+              {Math.min(
+                pagination.pageIndex * pagination.pageSize + 1,
+                totalItems
+              )}
+            </span>{" "}
+            to{" "}
+            <span className="font-medium text-foreground">
+              {Math.min(
+                (pagination.pageIndex + 1) * pagination.pageSize,
+                totalItems
+              )}
+            </span>{" "}
+            of <span className="font-medium text-foreground">{totalItems}</span>{" "}
+            results
+          </p>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-md px-3"
+              onClick={() =>
+                setPagination((p) => ({ ...p, pageIndex: p.pageIndex - 1 }))
+              }
+              disabled={pagination.pageIndex === 0}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-md px-3"
+              onClick={() =>
+                setPagination((p) => ({ ...p, pageIndex: p.pageIndex + 1 }))
+              }
+              disabled={pagination.pageIndex >= pageCount - 1}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* 6. DELETE DIALOG */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+        <AlertDialogContent className="rounded-lg border bg-background shadow-lg">
+          <div className="flex flex-col items-center gap-2 text-center p-4">
+            <div className="rounded-full bg-destructive/10 p-3 text-destructive mb-2">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <AlertDialogTitle className="text-xl">
+              Delete Course?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the course{" "}
-              <strong>{courseToDelete?.title}</strong> and all its chapters and
-              lessons. This action cannot be undone.
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-foreground">
+                {courseToDelete?.title}
+              </span>
+              ?
+              <br />
+              This action cannot be undone and all data will be lost.
             </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          </div>
+          <AlertDialogFooter className="p-4 bg-muted/30">
+            <AlertDialogCancel className="rounded-md h-10 border-input bg-background">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
-              className="bg-destructive hover:bg-destructive/90"
+              className="bg-destructive hover:bg-destructive/90 rounded-md h-10"
             >
-              Delete
+              Delete Course
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }
-
-export default CoursesPage;

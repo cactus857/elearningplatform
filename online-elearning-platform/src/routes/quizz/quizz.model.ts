@@ -98,6 +98,7 @@ export const CreateQuizBodySchema = z
           text: z.string().min(1),
           options: z.array(z.string()).min(2).max(6),
           correctAnswerIndex: z.number().int().min(0),
+          explanation: z.string().nullable(),
         }),
       )
       .min(1),
@@ -124,6 +125,7 @@ export const UpdateQuizBodySchema = z
           text: z.string().min(1),
           options: z.array(z.string()).min(2).max(6),
           correctAnswerIndex: z.number().int().min(0),
+          explanation: z.string().nullable(),
         }),
       )
       .optional(),

@@ -21,13 +21,16 @@ export const SaveGeneratedQuizBodySchema = z
     shuffleQuestions: z.boolean().default(true),
     shuffleOptions: z.boolean().default(true),
     showCorrectAnswers: z.boolean().default(true),
+    availableFrom: z.coerce.date().nullable().optional(),
+    availableTo: z.coerce.date().nullable().optional(),
+    maxAttempts: z.number().int().min(1).max(10).nullable().optional(),
     questions: z
       .array(
         z.object({
           text: z.string().min(1),
           options: z.array(z.string()).min(2).max(6),
           correctAnswerIndex: z.number().int().min(0),
-          explanation: z.string().optional(),
+          explanation: z.string(),
         }),
       )
       .min(1),
@@ -43,12 +46,15 @@ export const GenerateQuizResSchema = z.object({
   shuffleQuestions: z.boolean(),
   shuffleOptions: z.boolean(),
   showCorrectAnswers: z.boolean(),
+  availableFrom: z.coerce.date().nullable().optional(),
+  availableTo: z.coerce.date().nullable().optional(),
+  maxAttempts: z.number().int().min(1).max(10).nullable().optional(),
   questions: z.array(
     z.object({
       text: z.string(),
       options: z.array(z.string()),
       correctAnswerIndex: z.number(),
-      explanation: z.string().optional(),
+      explanation: z.string(),
       difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']),
       topic: z.string(),
     }),

@@ -333,7 +333,10 @@ export class QuizRepository {
         ...quizData,
         deletedAt: null,
         questions: {
-          create: questions,
+          create: questions.map((q) => ({
+            ...q,
+            explanation: q.explanation ?? null,
+          })),
         },
       },
     })
@@ -357,7 +360,10 @@ export class QuizRepository {
         data: {
           ...quizData,
           questions: {
-            create: questions,
+            create: questions.map((q) => ({
+              ...q,
+              explanation: q.explanation ?? null,
+            })),
           },
         },
         include: {

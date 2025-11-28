@@ -100,6 +100,7 @@ export interface CreateQuizDto {
     text: string;
     options: string[];
     correctAnswerIndex: number;
+    explanation?: string | null;
   }[];
 }
 
@@ -118,6 +119,7 @@ export interface UpdateQuizDto {
     text: string;
     options: string[];
     correctAnswerIndex: number;
+    explanation?: string | null;
   }[];
 }
 
