@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, Filter, LayoutGrid, BookOpen, X } from "lucide-react";
+import {
+  Search,
+  Filter,
+  LayoutGrid,
+  BookOpen,
+  X,
+  Sparkles,
+  GraduationCap,
+  Layers,
+} from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -12,10 +21,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QuizCard } from "./_components/QuizCard";
 import { getAllQuizzes, IQuiz } from "@/services/quiz.service";
+import { cn } from "@/lib/utils";
 
 type QuizWithCourse = IQuiz & {
   _count?: { questions: number; attempts: number };
@@ -83,97 +92,104 @@ export default function QuizListPage() {
 
   const isFiltering = searchQuery !== "" || selectedCourse !== "all";
 
-  // Tính toán thống kê nhanh
+  // Tính toán thống kê
   const totalQuestions = quizzes.reduce(
     (acc, q) => acc + (q._count?.questions || 0),
     0
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative overflow-hidden transition-colors duration-300">
-      {/* Background Decor (Grid Pattern) */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-        <div className="absolute left-0 top-0 h-[500px] w-[500px] bg-primary/5 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2"></div>
+    <div className="relative min-h-screen bg-background text-foreground transition-colors duration-300">
+      {/* 1. Ambient Background Effects */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-[10%] -top-[10%] h-[600px] w-[600px] rounded-full bg-primary/5 blur-[100px]" />
+        <div className="absolute -bottom-[10%] -right-[10%] h-[600px] w-[600px] rounded-full bg-secondary/20 blur-[100px]" />
+        <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.03]" />
       </div>
 
-      <div className="container mx-auto px-4 md:px-6 py-10 relative z-10 max-w-7xl">
-        {/* 1. Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 text-secondary-foreground text-xs font-medium backdrop-blur-sm border border-border">
-              <BookOpen className="h-3.5 w-3.5" />
-              <span>Thư viện bài tập</span>
+      <div className="relative z-10 container mx-auto max-w-[1400px] px-4 py-12 md:px-6">
+        {/* 2. Modern Hero Section */}
+        <div className="mb-16 flex flex-col justify-between gap-10 lg:flex-row lg:items-end">
+          <div className="max-w-2xl space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary shadow-sm backdrop-blur-sm">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Thư viện trắc nghiệm</span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Khám phá bài kiểm tra
+
+            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
+              Khám phá{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/60">
+                Kiến thức
+              </span>
             </h1>
-            <p className="text-muted-foreground text-lg max-w-2xl">
-              Nâng cao kiến thức và đánh giá năng lực qua các bài trắc nghiệm từ
-              cơ bản đến nâng cao.
+
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              Hệ thống bài kiểm tra đa dạng giúp bạn ôn tập, đánh giá năng lực
+              và chinh phục các mục tiêu học tập một cách hiệu quả nhất.
             </p>
           </div>
 
-          {/* Quick Stats */}
-          <div className="flex gap-4 md:gap-8 p-4 rounded-xl bg-card border border-border/50 shadow-sm">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">
-                {quizzes.length}
-              </div>
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Bài tập
-              </div>
-            </div>
-            <Separator orientation="vertical" className="h-10" />
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">
-                {courses.length}
-              </div>
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Khóa học
-              </div>
-            </div>
-            <Separator orientation="vertical" className="h-10" />
-            <div className="text-center hidden sm:block">
-              <div className="text-2xl font-bold text-primary">
-                {totalQuestions}
-              </div>
-              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Câu hỏi
-              </div>
-            </div>
+          {/* Glass Stats Cards */}
+          <div className="grid grid-cols-3 gap-4 lg:min-w-[400px]">
+            <StatCard
+              icon={<BookOpen className="h-5 w-5" />}
+              value={quizzes.length}
+              label="Bài tập"
+            />
+            <StatCard
+              icon={<GraduationCap className="h-5 w-5" />}
+              value={courses.length}
+              label="Khóa học"
+            />
+            <StatCard
+              icon={<Layers className="h-5 w-5" />}
+              value={totalQuestions}
+              label="Câu hỏi"
+            />
           </div>
         </div>
 
-        {/* 2. Toolbar (Search & Filter) */}
-        <div className="sticky top-4 z-20 mb-8">
-          <div className="rounded-xl border border-border bg-background/80 backdrop-blur-md shadow-sm p-2 md:p-3">
-            <div className="flex flex-col md:flex-row gap-3">
-              {/* Search */}
+        {/* 3. Floating Toolbar */}
+        <div className="sticky top-6 z-30 mb-10">
+          <div className="rounded-2xl border border-border/40 bg-background/70 p-2 shadow-lg backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+            <div className="flex flex-col gap-2 md:flex-row">
+              {/* Search Input */}
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Tìm kiếm bài kiểm tra..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-11 bg-background/50 border-transparent hover:border-border focus:border-primary transition-all"
+                  className="h-12 w-full border-transparent bg-muted/40 pl-10 text-base transition-all hover:bg-muted/60 focus:border-primary/20 focus:bg-background focus:ring-0 rounded-xl"
                 />
               </div>
 
-              {/* Filter Dropdown */}
-              <div className="flex items-center gap-2 min-w-[200px] md:max-w-xs">
+              {/* Filter Select */}
+              <div className="md:w-[280px]">
                 <Select
                   value={selectedCourse}
                   onValueChange={setSelectedCourse}
                 >
-                  <SelectTrigger className="h-11 bg-background/50 border-transparent hover:border-border focus:border-primary transition-all">
-                    <div className="flex items-center gap-2 truncate">
-                      <Filter className="h-4 w-4 text-muted-foreground" />
-                      <SelectValue placeholder="Lọc theo khóa học" />
+                  <SelectTrigger className="h-12 w-full border-transparent bg-muted/40 px-4 text-base transition-all hover:bg-muted/60 focus:border-primary/20 focus:bg-background focus:ring-0 rounded-xl">
+                    <div className="flex items-center gap-2 truncate text-muted-foreground">
+                      <Filter className="h-4 w-4" />
+                      <span
+                        className={cn(
+                          "truncate",
+                          selectedCourse !== "all" &&
+                            "text-foreground font-medium"
+                        )}
+                      >
+                        {selectedCourse === "all"
+                          ? "Lọc theo khóa học"
+                          : courses.find((c) => c.id === selectedCourse)?.title}
+                      </span>
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tất cả khóa học</SelectItem>
+                    <SelectItem value="all" className="font-medium">
+                      Tất cả khóa học
+                    </SelectItem>
                     {courses.map((course) => (
                       <SelectItem key={course.id} value={course.id}>
                         {course.title}
@@ -189,7 +205,7 @@ export default function QuizListPage() {
                   variant="ghost"
                   size="icon"
                   onClick={clearFilters}
-                  className="h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  className="h-12 w-12 shrink-0 rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                   title="Xóa bộ lọc"
                 >
                   <X className="h-5 w-5" />
@@ -199,71 +215,94 @@ export default function QuizListPage() {
           </div>
         </div>
 
-        {/* 3. Main Content Area */}
+        {/* 4. Content Grid */}
         <div className="space-y-6">
-          {/* Result Count Info */}
           {!isLoading && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
-              <LayoutGrid className="h-4 w-4" />
-              <span>Hiển thị {filteredQuizzes.length} bài kiểm tra</span>
+            <div className="flex items-center justify-between px-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <LayoutGrid className="h-4 w-4" />
+                <span>Tìm thấy {filteredQuizzes.length} kết quả</span>
+              </div>
             </div>
           )}
 
-          {/* Loading State */}
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div
                   key={i}
-                  className="flex flex-col space-y-4 rounded-xl border border-border bg-card p-4 h-[280px]"
+                  className="flex flex-col space-y-4 rounded-3xl border border-border bg-card p-6 shadow-sm"
                 >
-                  <Skeleton className="h-32 w-full rounded-lg" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-40 w-full rounded-2xl" />
+                  <div className="space-y-3">
+                    <Skeleton className="h-5 w-3/4 rounded-lg" />
+                    <Skeleton className="h-4 w-1/2 rounded-lg" />
                   </div>
                   <div className="mt-auto pt-4 flex gap-2">
-                    <Skeleton className="h-8 w-20" />
-                    <Skeleton className="h-8 w-20" />
+                    <Skeleton className="h-10 w-full rounded-xl" />
                   </div>
                 </div>
               ))}
             </div>
           ) : filteredQuizzes.length === 0 ? (
-            /* Empty State */
-            <div className="flex flex-col items-center justify-center py-20 px-4 rounded-3xl border border-dashed border-border bg-card/30 text-center animate-in fade-in zoom-in duration-500">
-              <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mb-6">
+            <div className="flex min-h-[400px] flex-col items-center justify-center rounded-3xl border border-dashed bg-card/50 px-4 text-center animate-in fade-in zoom-in duration-500">
+              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-muted/50 ring-8 ring-muted/20">
                 <Search className="h-10 w-10 text-muted-foreground" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">
-                Không tìm thấy kết quả
-              </h3>
-              <p className="text-muted-foreground max-w-sm mb-6">
+              <h3 className="text-xl font-bold">Không tìm thấy kết quả</h3>
+              <p className="mt-2 max-w-sm text-muted-foreground">
                 {isFiltering
-                  ? "Không có bài kiểm tra nào khớp với bộ lọc hiện tại."
-                  : "Chưa có bài kiểm tra nào được tạo."}
+                  ? "Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc khóa học."
+                  : "Hệ thống chưa có bài kiểm tra nào."}
               </p>
               {isFiltering && (
                 <Button
                   onClick={clearFilters}
                   variant="outline"
-                  className="gap-2"
+                  className="mt-8 rounded-full px-8"
                 >
-                  <X className="h-4 w-4" /> Xóa bộ lọc
+                  Xóa bộ lọc
                 </Button>
               )}
             </div>
           ) : (
-            /* Quiz Grid */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pb-20">
               {filteredQuizzes.map((quiz) => (
-                <div key={quiz.id} className="h-full">
+                <div
+                  key={quiz.id}
+                  className="h-full transform transition-all duration-300 hover:-translate-y-1"
+                >
                   <QuizCard quiz={quiz} />
                 </div>
               ))}
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Sub-component for Stats to keep code clean
+function StatCard({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: number;
+  label: string;
+}) {
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/50 p-4 transition-all hover:bg-card hover:shadow-md hover:border-border">
+      <div className="relative z-10 flex flex-col items-center justify-center text-center">
+        <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+          {icon}
+        </div>
+        <div className="text-2xl font-bold text-foreground">{value}</div>
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
       </div>
     </div>
   );

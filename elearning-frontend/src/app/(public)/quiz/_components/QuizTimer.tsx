@@ -1,4 +1,4 @@
-import { Clock, AlertCircle } from "lucide-react";
+import { Clock, Timer, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface QuizTimerProps {
@@ -14,37 +14,49 @@ export const QuizTimer = ({
 }: QuizTimerProps) => {
   if (timeRemaining === null) return null;
 
-  const isWarning = timeRemaining <= 300 && timeRemaining > 60; // Last 5 minutes
-  const isCritical = timeRemaining <= 60; // Last minute
+  const isWarning = timeRemaining <= 300 && timeRemaining > 60;
+  const isCritical = timeRemaining <= 60;
 
   return (
     <div
       className={cn(
-        "fixed right-4 top-4 z-50 flex items-center gap-3 rounded-2xl border-2 bg-card px-6 py-4 font-mono text-xl font-bold shadow-2xl backdrop-blur-sm transition-all",
-        {
-          "border-border": !isWarning && !isCritical,
-          "animate-pulse border-yellow-500 dark:border-yellow-400": isWarning,
-          "animate-pulse border-destructive": isCritical,
-        }
+        "relative flex items-center gap-3 rounded-full border px-5 py-2 text-sm font-semibold shadow-sm transition-all duration-500 hover:shadow-md",
+        "bg-background/80 backdrop-blur-md", // Glass effect
+        !isWarning && !isCritical && "border-border text-foreground",
+        isWarning &&
+          "border-orange-500/30 bg-orange-500/5 text-orange-600 dark:text-orange-400",
+        isCritical && "border-destructive/30 bg-destructive/5 text-destructive"
       )}
     >
-      {isCritical ? (
-        <AlertCircle className="h-6 w-6 animate-pulse text-destructive" />
-      ) : isWarning ? (
-        <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-      ) : (
-        <Clock className="h-6 w-6 text-green-600 dark:text-green-400" />
-      )}
-      <span
-        className={cn(
-          "min-w-[80px] text-center",
-          isCritical && "text-destructive",
-          isWarning && "text-yellow-600 dark:text-yellow-400",
-          !isWarning && !isCritical && "text-green-600 dark:text-green-400"
-        )}
-      >
+      {/* Animated Pulse Dot */}
+      <span className="relative flex h-2.5 w-2.5">
+        <span
+          className={cn(
+            "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
+            isCritical
+              ? "bg-destructive"
+              : isWarning
+              ? "bg-orange-500"
+              : "bg-emerald-500"
+          )}
+        ></span>
+        <span
+          className={cn(
+            "relative inline-flex h-2.5 w-2.5 rounded-full",
+            isCritical
+              ? "bg-destructive"
+              : isWarning
+              ? "bg-orange-500"
+              : "bg-emerald-500"
+          )}
+        ></span>
+      </span>
+
+      <span className="tabular-nums font-mono text-base tracking-wider">
         {formatTime}
       </span>
+
+      {isCritical && <Flame className="h-4 w-4 animate-pulse" />}
     </div>
   );
 };

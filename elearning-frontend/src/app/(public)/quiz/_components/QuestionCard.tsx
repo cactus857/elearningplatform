@@ -1,7 +1,7 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { CheckCircle2 } from "lucide-react";
+import { Check, Hash } from "lucide-react";
 
 interface QuestionCardProps {
   question: {
@@ -23,105 +23,86 @@ export const QuestionCard = ({
   onAnswerChange,
 }: QuestionCardProps) => {
   return (
-    <Card className="border-2 shadow-md">
-      <CardHeader className="space-y-4 pb-6">
-        <div className="flex items-center justify-between">
+    <div className="w-full space-y-6">
+      {/* Question Header & Content - Tách khỏi Card để thoáng hơn */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
           <Badge
             variant="secondary"
-            className="px-4 py-2 text-base font-semibold"
+            className="px-3 py-1 text-sm font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
           >
-            Câu {questionNumber} / {totalQuestions}
+            Câu {questionNumber}
           </Badge>
-          {selectedAnswer !== null && (
-            <div className="flex items-center gap-2 text-sm font-medium text-green-600 dark:text-green-400">
-              <CheckCircle2 className="h-4 w-4" />
-              <span>Đã trả lời</span>
-            </div>
-          )}
+          <span className="text-sm font-medium text-muted-foreground">
+            / {totalQuestions} câu hỏi
+          </span>
         </div>
 
-        {/* Question Text - Strip HTML tags */}
-        <h3 className="text-xl font-bold leading-relaxed">
+        <h3 className="text-2xl font-bold leading-relaxed tracking-tight text-foreground md:text-3xl">
           {question.text.replace(/<[^>]*>/g, "")}
         </h3>
-      </CardHeader>
+      </div>
 
-      <CardContent>
-        <div className="space-y-3">
-          {question.options.map((option, index) => {
-            const isSelected = selectedAnswer === index;
-            const label = String.fromCharCode(65 + index);
+      {/* Options Area */}
+      <div className="grid gap-4 md:grid-cols-1">
+        {question.options.map((option, index) => {
+          const isSelected = selectedAnswer === index;
+          const label = String.fromCharCode(65 + index);
 
-            return (
-              <button
-                key={index}
-                type="button"
-                onClick={() => {
-                  if (isSelected) {
-                    onAnswerChange(-1);
-                  } else {
-                    onAnswerChange(index);
-                  }
-                }}
+          return (
+            <div
+              key={index}
+              onClick={() =>
+                isSelected ? onAnswerChange(-1) : onAnswerChange(index)
+              }
+              className={cn(
+                "group relative flex cursor-pointer items-center gap-5 rounded-2xl border p-5 transition-all duration-300 ease-in-out",
+                // Hover State
+                "hover:border-primary/50 hover:bg-muted/30 hover:shadow-md",
+                // Selected State - Focus vào Visual Impact
+                isSelected
+                  ? "border-primary bg-primary/5 shadow-[0_0_0_2px_hsl(var(--primary))] dark:bg-primary/10"
+                  : "border-border bg-card shadow-sm"
+              )}
+            >
+              {/* Option Label / Checkbox */}
+              <div
                 className={cn(
-                  "group relative w-full rounded-xl border-2 p-5 text-left transition-all cursor-pointer",
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 text-sm font-bold transition-all duration-300",
                   isSelected
-                    ? "border-primary bg-primary/10 shadow-md hover:bg-primary/15"
-                    : "border-border bg-card hover:border-primary/50 hover:bg-accent hover:shadow-sm"
+                    ? "border-primary bg-primary text-primary-foreground scale-110"
+                    : "border-muted-foreground/20 bg-background text-muted-foreground group-hover:border-primary/50 group-hover:text-primary"
                 )}
               >
-                <div className="flex items-start gap-4">
-                  {/* Custom Radio Button */}
-                  <div
-                    className={cn(
-                      "mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all",
-                      isSelected
-                        ? "border-primary bg-primary shadow-sm"
-                        : "border-muted-foreground/30 bg-background group-hover:border-primary/50"
-                    )}
-                  >
-                    {isSelected && (
-                      <div className="h-3.5 w-3.5 rounded-full bg-primary-foreground" />
-                    )}
-                  </div>
+                {isSelected ? (
+                  <Check className="h-5 w-5" strokeWidth={3} />
+                ) : (
+                  label
+                )}
+              </div>
 
-                  {/* Option Content */}
-                  <div className="flex-1">
-                    <div className="flex items-baseline gap-3">
-                      <span
-                        className={cn(
-                          "text-base font-bold",
-                          isSelected ? "text-primary" : "text-muted-foreground"
-                        )}
-                      >
-                        {label}.
-                      </span>
-                      <span
-                        className={cn(
-                          "text-base leading-relaxed",
-                          isSelected && "font-medium"
-                        )}
-                      >
-                        {option.replace(/<[^>]*>/g, "")}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Checkmark for selected */}
-                  {isSelected && (
-                    <div className="flex flex-col items-end flex-shrink-0">
-                      <CheckCircle2 className="h-5 w-5 text-primary" />
-                      <span className="mt-1 text-xs text-muted-foreground">
-                        Click để bỏ
-                      </span>
-                    </div>
+              {/* Option Text */}
+              <div className="flex-1">
+                <p
+                  className={cn(
+                    "text-lg transition-colors duration-200",
+                    isSelected
+                      ? "font-semibold text-foreground"
+                      : "font-medium text-muted-foreground group-hover:text-foreground"
                   )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+                >
+                  {option.replace(/<[^>]*>/g, "")}
+                </p>
+              </div>
+
+              {/* Decorative Active Indicator (Optional line on the right) */}
+              {isSelected && (
+                <div className="absolute right-0 top-1/2 h-1/2 w-1 -translate-y-1/2 rounded-l-full bg-primary" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 };

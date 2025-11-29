@@ -476,7 +476,7 @@ export default function CoursesPage() {
                         Instructor
                       </span>
                       <span className="text-xs font-semibold text-foreground truncate max-w-[120px]">
-                        {course.instructor.fullName.split(" ")[0]}
+                        {course.instructor.fullName}
                       </span>
                     </div>
                   </div>
