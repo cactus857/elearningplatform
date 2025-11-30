@@ -32,6 +32,7 @@ import {
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AiTutorChat } from "@/components/features/ai-tutor/ai-tutor-chat";
 
 // Extract YouTube video ID from URL
 function extractYouTubeId(url: string): string | null {
@@ -658,6 +659,7 @@ export default function LearningPage({ params }: { params: Params }) {
           </Button>
         </div>
       </div>
+      <AiTutorChat videoUrl={currentLesson?.videoUrl || undefined} />
     </div>
   );
 }
