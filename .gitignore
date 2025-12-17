@@ -1,0 +1,14 @@
+# Prompt folder - private notes and documentation
+Prompt/
+
+# IDE folders
+.vs/
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Agent folder
+.agent/
