@@ -1,9 +1,14 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import z from "zod";
-import { courseSchema } from "../../../create/page";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  courseSchema,
+  courseLevels,
+  courseStatus,
+  courseCategories,
+  type CourseFormValues,
+} from "@/schemas/course.schema";
 import {
   Form,
   FormControl,
@@ -34,24 +39,6 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { getErrorMessage } from "@/utils/error-message";
 
-const courseLevels = ["Beginner", "Intermediate", "Advanced"] as const;
-const courseStatus = ["Draft", "Published", "Archived"] as const;
-const courseCategories = [
-  "Development",
-  "Business",
-  "Finance & Accounting",
-  "IT & Software",
-  "Office Productivity",
-  "Personal Development",
-  "Design",
-  "Marketing",
-  "Lifestyle",
-  "Photography & Video",
-  "Health & Fitness",
-  "Music",
-  "Teaching & Academics",
-] as const;
-
 export default function EditCourseForm({
   course,
 }: {
@@ -65,7 +52,7 @@ export default function EditCourseForm({
   const [newLearning, setNewLearning] = useState("");
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof courseSchema>>({
+  const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
       title: "",
@@ -91,14 +78,14 @@ export default function EditCourseForm({
           course.level === "BEGINNER"
             ? "Beginner"
             : course.level === "INTERMEDIATE"
-            ? "Intermediate"
-            : "Advanced",
+              ? "Intermediate"
+              : "Advanced",
         status:
           course.status === "DRAFT"
             ? "Draft"
             : course.status === "PUBLISHED"
-            ? "Published"
-            : "Archived",
+              ? "Published"
+              : "Archived",
         slug: course.slug ?? "",
         category: courseCategories.includes(course.category as any)
           ? (course.category as (typeof courseCategories)[number])
@@ -141,7 +128,7 @@ export default function EditCourseForm({
     setWhatYouWillLearn(whatYouWillLearn.filter((_, i) => i !== index));
   };
 
-  async function onSubmit(values: z.infer<typeof courseSchema>) {
+  async function onSubmit(values: CourseFormValues) {
     try {
       setIsSubmitting(true);
 

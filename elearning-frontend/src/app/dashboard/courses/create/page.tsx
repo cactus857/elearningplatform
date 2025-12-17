@@ -11,7 +11,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, PlusIcon, SparkleIcon, X } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
-import z from "zod";
+import {
+  courseSchema,
+  courseLevels,
+  courseStatus,
+  courseCategories,
+  type CourseFormValues,
+} from "@/schemas/course.schema";
 import {
   Form,
   FormControl,
@@ -39,54 +45,6 @@ import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import { getErrorMessage } from "@/utils/error-message";
 
-const courseLevels = ["Beginner", "Intermediate", "Advanced"] as const;
-const courseStatus = ["Draft", "Published", "Archived"] as const;
-const courseCategories = [
-  "Development",
-  "Business",
-  "Finance & Accounting",
-  "IT & Software",
-  "Office Productivity",
-  "Personal Development",
-  "Design",
-  "Marketing",
-  "Lifestyle",
-  "Photography & Video",
-  "Health & Fitness",
-  "Music",
-  "Teaching & Academics",
-] as const;
-
-const courseSchema = z.object({
-  title: z
-    .string()
-    .min(5, { message: "Title must be at least 5 characters" })
-    .max(100, { message: "Title must be at most 100 characters" }),
-  description: z
-    .string()
-    .min(10, { message: "Description must be at least 10 characters" }),
-  thumbnail: z.string().optional(),
-  level: z.enum(courseLevels, {
-    message: "Level must be one of Beginner, Intermediate, Advanced",
-  }),
-  status: z.enum(courseStatus, {
-    message: "Status must be one of Draft, Published, Archived",
-  }),
-  duration: z.number().optional(),
-  slug: z.string().min(3, { message: "Slug must be at least 3 characters" }),
-  category: z.enum(courseCategories, {
-    message: "Category must be one of the predefined categories",
-  }),
-  smallDescription: z
-    .string()
-    .min(3, {
-      message: "Small description must be at least 3 characters",
-    })
-    .max(200, {
-      message: "Small description must be at most 200 characters",
-    }),
-});
-
 function CourseCreationPage() {
   const [requirements, setRequirements] = useState<string[]>([]);
   const [whatYouWillLearn, setWhatYouWillLearn] = useState<string[]>([]);
@@ -95,7 +53,7 @@ function CourseCreationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof courseSchema>>({
+  const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseSchema),
     defaultValues: {
       title: "",
@@ -132,7 +90,7 @@ function CourseCreationPage() {
     setWhatYouWillLearn(whatYouWillLearn.filter((_, i) => i !== index));
   };
 
-  async function onSubmit(values: z.infer<typeof courseSchema>) {
+  async function onSubmit(values: CourseFormValues) {
     try {
       setIsSubmitting(true);
 
