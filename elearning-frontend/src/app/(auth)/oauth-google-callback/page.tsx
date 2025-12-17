@@ -1,12 +1,13 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { setTokens } from "@/services/token.service";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
-const OauthCallbackPage = () => {
+function GoogleCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { fetchUserAfterLogin } = useAuth();
@@ -37,6 +38,19 @@ const OauthCallbackPage = () => {
       <p className="ml-4">Authenticating with Google, please wait...</p>
     </div>
   );
-};
+}
 
-export default OauthCallbackPage;
+export default function OauthGoogleCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-full items-center justify-center">
+          <LoadingSpinner />
+          <p className="ml-4">Loading...</p>
+        </div>
+      }
+    >
+      <GoogleCallbackContent />
+    </Suspense>
+  );
+}
