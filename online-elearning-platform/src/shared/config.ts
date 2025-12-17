@@ -3,12 +3,13 @@ import fs from 'fs'
 import path from 'path'
 import z from 'zod'
 
-config({
-  path: '.env',
-})
-
-if (!fs.existsSync(path.resolve('.env'))) {
-  console.log('Not found file .env')
+// Load .env file if it exists (for local development)
+// In production (Render/Vercel), env vars are injected directly
+const envPath = path.resolve('.env')
+if (fs.existsSync(envPath)) {
+  config({ path: envPath })
+} else if (process.env.NODE_ENV !== 'production') {
+  console.log('Not found file .env (required in development)')
   process.exit(1)
 }
 
