@@ -7,6 +7,7 @@ export interface IQuizQuestion {
   text: string;
   options: string[]; // Array of strings, not objects
   correctAnswerIndex?: number; // Only for instructor/admin
+  explanation?: string | null; // Explanation for the correct answer (admin/instructor only)
   quizId: string;
 }
 

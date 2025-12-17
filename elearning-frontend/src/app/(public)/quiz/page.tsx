@@ -119,7 +119,7 @@ export default function QuizListPage() {
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
               Khám phá{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/60">
-                Kiến thức
+                kiến thức
               </span>
             </h1>
 
@@ -177,7 +177,7 @@ export default function QuizListPage() {
                         className={cn(
                           "truncate",
                           selectedCourse !== "all" &&
-                            "text-foreground font-medium"
+                          "text-foreground font-medium"
                         )}
                       >
                         {selectedCourse === "all"

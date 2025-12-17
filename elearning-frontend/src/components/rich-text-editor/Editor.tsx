@@ -5,6 +5,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Menubar } from "./Menubar";
 import TextAlign from "@tiptap/extension-text-align";
+import Placeholder from "@tiptap/extension-placeholder";
 
 interface RichTextEditorProps {
   field: any;
@@ -15,13 +16,17 @@ interface RichTextEditorProps {
 export function RichTextEditor({
   field,
   minHeight = "300px",
-  placeholder = "Text something!",
+  placeholder = "Start typing...",
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit,
       TextAlign.configure({
         types: ["heading", "paragraph"],
+      }),
+      Placeholder.configure({
+        placeholder,
+        emptyEditorClass: "is-editor-empty",
       }),
     ],
     immediatelyRender: false,
@@ -37,19 +42,29 @@ export function RichTextEditor({
       field.onChange(editor.getHTML());
     },
 
-    content: field.value || `<p>${placeholder}</p>`,
+    content: field.value || "",
   });
 
   useEffect(() => {
     if (editor && field.value !== editor.getHTML()) {
-      editor.commands.setContent(field.value || `<p>${placeholder}</p>`);
+      editor.commands.setContent(field.value || "");
     }
-  }, [field.value, editor, placeholder]);
+  }, [field.value, editor]);
 
   return (
     <div className="w-full border border-input rounded-lg overflow-hidden dark:bg-input/30">
+      <style jsx global>{`
+        .is-editor-empty:first-child::before {
+          color: #adb5bd;
+          content: attr(data-placeholder);
+          float: left;
+          height: 0;
+          pointer-events: none;
+        }
+      `}</style>
       <Menubar editor={editor} />
       <EditorContent editor={editor} />
     </div>
   );
 }
+

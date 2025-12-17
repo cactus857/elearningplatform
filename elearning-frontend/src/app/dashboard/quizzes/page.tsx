@@ -607,6 +607,13 @@ export default function QuizzesPage() {
                       >
                         <DropdownMenuItem
                           onClick={() =>
+                            router.push(`/dashboard/quizzes/${quiz.id}`)
+                          }
+                        >
+                          <Eye className="mr-2 h-4 w-4" /> View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
                             router.push(`/dashboard/quizzes/${quiz.id}/edit`)
                           }
                         >
@@ -687,7 +694,7 @@ export default function QuizzesPage() {
                       size="sm"
                       className="h-8 rounded-lg bg-primary/90 hover:bg-primary shadow-sm"
                       onClick={() =>
-                        router.push(`/dashboard/quizzes/${quiz.id}/edit`)
+                        router.push(`/dashboard/quizzes/${quiz.id}`)
                       }
                     >
                       Details <Eye className="ml-1.5 h-3.5 w-3.5" />

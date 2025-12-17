@@ -1,0 +1,31 @@
+# Render.com Deployment Configuration
+# https://render.com/docs/deploy-nestjs
+
+# Build Command
+buildCommand: npm install && npx prisma generate && npm run build
+
+# Start Command
+startCommand: npm run start:prod
+
+# Environment Variables (set these in Render Dashboard)
+envVars:
+  - key: NODE_ENV
+    value: production
+  - key: DATABASE_URL
+    sync: false  # Set manually - MongoDB Atlas connection string
+  - key: JWT_SECRET
+    sync: false  # Set manually - secure random string
+  - key: ADMIN_EMAIL
+    sync: false  # Set manually
+  - key: ADMIN_PASSWORD
+    sync: false  # Set manually
+  - key: AWS_ACCESS_KEY_ID
+    sync: false  # Set manually (for S3)
+  - key: AWS_SECRET_ACCESS_KEY
+    sync: false  # Set manually (for S3)
+  - key: AWS_REGION
+    sync: false  # Set manually (for S3)
+  - key: AWS_S3_BUCKET_NAME
+    sync: false  # Set manually (for S3)
+  - key: OPENAI_API_KEY
+    sync: false  # Set manually (for AI features)

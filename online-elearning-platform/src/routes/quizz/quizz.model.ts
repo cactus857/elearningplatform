@@ -26,6 +26,7 @@ export const QuestionSchema = z.object({
   text: z.string().min(1),
   options: z.array(z.string()).min(2).max(6),
   correctAnswerIndex: z.number().int().min(0),
+  explanation: z.string().nullable().optional(), // Explanation for admin/instructor
   quizId: z.string(),
 })
 

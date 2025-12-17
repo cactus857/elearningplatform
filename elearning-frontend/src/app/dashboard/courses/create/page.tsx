@@ -57,7 +57,7 @@ const courseCategories = [
   "Teaching & Academics",
 ] as const;
 
-export const courseSchema = z.object({
+const courseSchema = z.object({
   title: z
     .string()
     .min(5, { message: "Title must be at least 5 characters" })

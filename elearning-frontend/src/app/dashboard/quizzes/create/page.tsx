@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -26,7 +26,7 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Copy, Trash2, Plus, X, Send, ArrowLeft } from "lucide-react";
+import { Copy, Trash2, Plus, X, Send, ArrowLeft, Upload, Download, FileSpreadsheet } from "lucide-react";
 import { createQuiz } from "@/services/quiz.service";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -41,6 +41,13 @@ import {
 } from "@/services/course.service";
 import { RichTextEditor } from "@/components/rich-text-editor/Editor";
 import { getErrorMessage } from "@/utils/error-message";
+import {
+  parseQuizCSV,
+  quizToCSV,
+  downloadCSV,
+  getTemplateCSV,
+  type QuizQuestion,
+} from "@/utils/quiz-csv";
 
 const quizSchema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title too long"),
@@ -77,6 +84,9 @@ export default function CreateQuizPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [courses, setCourses] = useState<ICourseRes[]>([]);
   const [courseDetail, setCourseDetail] = useState<ICourseDetailRes>();
+
+  // File input ref for CSV import
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<QuizFormValues>({
     resolver: zodResolver(quizSchema),
@@ -156,6 +166,76 @@ export default function CreateQuizPage() {
       ...question,
       options: [...question.options],
     });
+  };
+
+  // --- CSV Import/Export Functions ---
+  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      const result = parseQuizCSV(content);
+
+      if (result.errors.length > 0) {
+        toast.error(
+          <div>
+            <p className="font-semibold">Import Errors:</p>
+            <ul className="text-sm mt-1">
+              {result.errors.slice(0, 5).map((err, i) => (
+                <li key={i}>• {err}</li>
+              ))}
+              {result.errors.length > 5 && (
+                <li>...and {result.errors.length - 5} more</li>
+              )}
+            </ul>
+          </div>,
+          { duration: 8000 }
+        );
+      }
+
+      if (result.questions.length > 0) {
+        // Append imported questions to existing ones
+        result.questions.forEach((q) => {
+          append(q);
+        });
+        toast.success(`Successfully imported ${result.questions.length} questions!`);
+      }
+    };
+
+    reader.onerror = () => {
+      toast.error("Failed to read file");
+    };
+
+    reader.readAsText(file, "UTF-8");
+    // Reset input to allow importing same file again
+    event.target.value = "";
+  };
+
+  const handleExportCSV = () => {
+    if (fields.length === 0) {
+      toast.error("No questions to export");
+      return;
+    }
+
+    const questions: QuizQuestion[] = fields.map((field) => ({
+      text: field.text,
+      options: field.options,
+      correctAnswerIndex: field.correctAnswerIndex,
+      explanation: field.explanation || "",
+      type: field.type,
+    }));
+
+    const csv = quizToCSV(questions);
+    const title = form.getValues("title") || "quiz";
+    downloadCSV(csv, `${title.replace(/[^a-z0-9]/gi, "_")}_questions.csv`);
+    toast.success("Questions exported successfully!");
+  };
+
+  const handleDownloadTemplate = () => {
+    downloadCSV(getTemplateCSV(), "quiz_import_template.csv");
+    toast.success("Template downloaded!");
   };
 
   const addOption = (questionIndex: number) => {
@@ -358,7 +438,49 @@ export default function CreateQuizPage() {
 
               {/* Questions */}
               <div className="space-y-4">
-                <h2 className="text-2xl font-bold">Questions</h2>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h2 className="text-2xl font-bold">Questions</h2>
+
+                  {/* Import/Export Buttons */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept=".csv"
+                      onChange={handleImportCSV}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadTemplate}
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Template
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Import CSV
+                    </Button>
+                    {fields.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleExportCSV}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Export
+                      </Button>
+                    )}
+                  </div>
+                </div>
 
                 {fields.map((field, qIdx) => (
                   <Card key={field.id}>
@@ -414,14 +536,16 @@ export default function CreateQuizPage() {
                           <div key={optIdx} className="flex gap-2 items-start">
                             <input
                               type="radio"
-                              checked={field.correctAnswerIndex === optIdx}
+                              name={`question-${qIdx}-correct`}
+                              checked={form.watch(`questions.${qIdx}.correctAnswerIndex`) === optIdx}
                               onChange={() => {
                                 form.setValue(
                                   `questions.${qIdx}.correctAnswerIndex`,
-                                  optIdx
+                                  optIdx,
+                                  { shouldDirty: true, shouldTouch: false }
                                 );
                               }}
-                              className="mt-3"
+                              className="mt-3 cursor-pointer"
                             />
                             <div className="flex-1">
                               <FormField
