@@ -19,6 +19,7 @@ import { EnrollmentModule } from './routes/enrollment/enrollment.module'
 import { QuizzModule } from './routes/quizz/quizz.module'
 import { AiQuizGeneratorModule } from './routes/ai/generate-quiz/ai-quiz-generator.module'
 import { AiCourseGeneratorModule } from './routes/ai/generate-course/ai-course-generator.module'
+import { DashboardModule } from './routes/dashboard/dashboard.module'
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { AiCourseGeneratorModule } from './routes/ai/generate-course/ai-course-g
     QuizzModule,
     AiCourseGeneratorModule,
     AiQuizGeneratorModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
