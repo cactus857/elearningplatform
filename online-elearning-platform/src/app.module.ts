@@ -20,6 +20,7 @@ import { QuizzModule } from './routes/quizz/quizz.module'
 import { AiQuizGeneratorModule } from './routes/ai/generate-quiz/ai-quiz-generator.module'
 import { AiCourseGeneratorModule } from './routes/ai/generate-course/ai-course-generator.module'
 import { DashboardModule } from './routes/dashboard/dashboard.module'
+import { ProgressModule } from './routes/progress/progress.module'
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { DashboardModule } from './routes/dashboard/dashboard.module'
     AiCourseGeneratorModule,
     AiQuizGeneratorModule,
     DashboardModule,
+    ProgressModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,6 +1,17 @@
 import z from 'zod'
 
 // =============================================
+// QUERY SCHEMAS
+// =============================================
+
+export const DashboardQuerySchema = z
+  .object({
+    fromDate: z.coerce.date().optional(),
+    toDate: z.coerce.date().optional(),
+  })
+  .strict()
+
+// =============================================
 // COMMON SCHEMAS
 // =============================================
 
@@ -17,16 +28,6 @@ export const GrowthStatsSchema = z.object({
 })
 
 // =============================================
-// QUERY SCHEMAS
-// =============================================
-
-export const DashboardQuerySchema = z
-  .object({
-    period: z.enum(['today', '7days', '30days', '90days', 'year', 'all']).optional().default('30days'),
-  })
-  .strict()
-
-// =============================================
 // ADMIN OVERVIEW
 // =============================================
 
@@ -35,12 +36,16 @@ export const AdminOverviewResSchema = z.object({
   totalCourses: z.number(),
   totalEnrollments: z.number(),
   totalQuizAttempts: z.number(),
-  newUsersToday: z.number(),
-  newEnrollmentsToday: z.number(),
-  newCoursesToday: z.number(),
+  newUsersInRange: z.number(),
+  newEnrollmentsInRange: z.number(),
+  newCoursesInRange: z.number(),
   userGrowth: GrowthStatsSchema,
   enrollmentGrowth: GrowthStatsSchema,
   courseGrowth: GrowthStatsSchema,
+  dateRange: z.object({
+    from: z.date(),
+    to: z.date(),
+  }),
 })
 
 // =============================================
@@ -71,14 +76,16 @@ export const UserStatisticsResSchema = z.object({
   totalUsers: z.number(),
   byRole: z.array(UserByRoleSchema),
   byStatus: UserStatusStatsSchema,
-  newUsersToday: z.number(),
-  newUsersThisWeek: z.number(),
-  newUsersThisMonth: z.number(),
+  newUsersInRange: z.number(),
   userTrend: z.array(TrendPointSchema),
   growth: GrowthStatsSchema,
   topInstructors: z.array(TopInstructorSchema),
   twoFactorEnabled: z.number(),
   twoFactorPercentage: z.number(),
+  dateRange: z.object({
+    from: z.date(),
+    to: z.date(),
+  }),
 })
 
 // =============================================
@@ -114,9 +121,7 @@ export const CourseStatisticsResSchema = z.object({
   archivedCourses: z.number(),
   byStatus: z.array(CourseByStatusSchema),
   byLevel: z.array(CourseByLevelSchema),
-  newCoursesToday: z.number(),
-  newCoursesThisWeek: z.number(),
-  newCoursesThisMonth: z.number(),
+  newCoursesInRange: z.number(),
   courseTrend: z.array(TrendPointSchema),
   growth: GrowthStatsSchema,
   topCoursesByEnrollment: z.array(TopCourseSchema),
@@ -124,6 +129,10 @@ export const CourseStatisticsResSchema = z.object({
   totalLessons: z.number(),
   averageChaptersPerCourse: z.number(),
   averageLessonsPerCourse: z.number(),
+  dateRange: z.object({
+    from: z.date(),
+    to: z.date(),
+  }),
 })
 
 // =============================================
@@ -145,9 +154,7 @@ export const EnrollmentByCourseSchema = z.object({
 export const EnrollmentStatisticsResSchema = z.object({
   totalEnrollments: z.number(),
   byStatus: EnrollmentStatusStatsSchema,
-  newEnrollmentsToday: z.number(),
-  newEnrollmentsThisWeek: z.number(),
-  newEnrollmentsThisMonth: z.number(),
+  newEnrollmentsInRange: z.number(),
   enrollmentTrend: z.array(TrendPointSchema),
   growth: GrowthStatsSchema,
   overallCompletionRate: z.number(),
@@ -155,6 +162,10 @@ export const EnrollmentStatisticsResSchema = z.object({
   topCoursesByEnrollment: z.array(EnrollmentByCourseSchema),
   activeStudents: z.number(),
   churnedStudents: z.number(),
+  dateRange: z.object({
+    from: z.date(),
+    to: z.date(),
+  }),
 })
 
 // =============================================
@@ -182,13 +193,15 @@ export const QuizStatisticsResSchema = z.object({
   totalQuestions: z.number(),
   totalAttempts: z.number(),
   performance: QuizPerformanceSchema,
-  newAttemptsToday: z.number(),
-  newAttemptsThisWeek: z.number(),
-  newAttemptsThisMonth: z.number(),
+  newAttemptsInRange: z.number(),
   attemptTrend: z.array(TrendPointSchema),
   quizzesByCourse: z.array(QuizByCourseSchema),
   averageQuestionsPerQuiz: z.number(),
   averageAttemptsPerQuiz: z.number(),
+  dateRange: z.object({
+    from: z.date(),
+    to: z.date(),
+  }),
 })
 
 // =============================================
@@ -230,9 +243,9 @@ export const FullAdminDashboardResSchema = z.object({
 // TYPES
 // =============================================
 
+export type DashboardQueryType = z.infer<typeof DashboardQuerySchema>
 export type TrendPointType = z.infer<typeof TrendPointSchema>
 export type GrowthStatsType = z.infer<typeof GrowthStatsSchema>
-export type DashboardQueryType = z.infer<typeof DashboardQuerySchema>
 export type AdminOverviewResType = z.infer<typeof AdminOverviewResSchema>
 export type UserStatisticsResType = z.infer<typeof UserStatisticsResSchema>
 export type CourseStatisticsResType = z.infer<typeof CourseStatisticsResSchema>

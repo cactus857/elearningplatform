@@ -1,7 +1,8 @@
-import { Controller, Get } from '@nestjs/common'
+import { Controller, Get, Query } from '@nestjs/common'
 import { ZodSerializerDto } from 'nestjs-zod'
 import { DashboardService } from './dashboard.service'
 import {
+  DashboardQueryDTO,
   AdminOverviewResDTO,
   UserStatisticsResDTO,
   CourseStatisticsResDTO,
@@ -21,32 +22,32 @@ export class DashboardController {
 
   @Get('admin/overview')
   @ZodSerializerDto(AdminOverviewResDTO)
-  getAdminOverview() {
-    return this.dashboardService.getAdminOverview()
+  getAdminOverview(@Query() query: DashboardQueryDTO) {
+    return this.dashboardService.getAdminOverview(query)
   }
 
   @Get('admin/users')
   @ZodSerializerDto(UserStatisticsResDTO)
-  getUserStatistics() {
-    return this.dashboardService.getUserStatistics()
+  getUserStatistics(@Query() query: DashboardQueryDTO) {
+    return this.dashboardService.getUserStatistics(query)
   }
 
   @Get('admin/courses')
   @ZodSerializerDto(CourseStatisticsResDTO)
-  getCourseStatistics() {
-    return this.dashboardService.getCourseStatistics()
+  getCourseStatistics(@Query() query: DashboardQueryDTO) {
+    return this.dashboardService.getCourseStatistics(query)
   }
 
   @Get('admin/enrollments')
   @ZodSerializerDto(EnrollmentStatisticsResDTO)
-  getEnrollmentStatistics() {
-    return this.dashboardService.getEnrollmentStatistics()
+  getEnrollmentStatistics(@Query() query: DashboardQueryDTO) {
+    return this.dashboardService.getEnrollmentStatistics(query)
   }
 
   @Get('admin/quizzes')
   @ZodSerializerDto(QuizStatisticsResDTO)
-  getQuizStatistics() {
-    return this.dashboardService.getQuizStatistics()
+  getQuizStatistics(@Query() query: DashboardQueryDTO) {
+    return this.dashboardService.getQuizStatistics(query)
   }
 
   @Get('admin/system')
@@ -57,13 +58,13 @@ export class DashboardController {
 
   @Get('admin/full')
   @ZodSerializerDto(FullAdminDashboardResDTO)
-  async getFullAdminDashboard() {
+  async getFullAdminDashboard(@Query() query: DashboardQueryDTO) {
     const [overview, users, courses, enrollments, quizzes, system] = await Promise.all([
-      this.dashboardService.getAdminOverview(),
-      this.dashboardService.getUserStatistics(),
-      this.dashboardService.getCourseStatistics(),
-      this.dashboardService.getEnrollmentStatistics(),
-      this.dashboardService.getQuizStatistics(),
+      this.dashboardService.getAdminOverview(query),
+      this.dashboardService.getUserStatistics(query),
+      this.dashboardService.getCourseStatistics(query),
+      this.dashboardService.getEnrollmentStatistics(query),
+      this.dashboardService.getQuizStatistics(query),
       this.dashboardService.getSystemStatistics(),
     ])
 

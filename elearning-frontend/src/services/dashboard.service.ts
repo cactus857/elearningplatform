@@ -1,10 +1,54 @@
 import { API_ENDPOINT } from "@/constants/endpoint";
 import api from "@/utils/api";
-
-// ENUMS & TYPES
-
+import type { DateRange } from "react-day-picker"; 
 export type DashboardPeriod = 'today' | '7days' | '30days' | '90days' | 'year' | 'all';
 
+export interface DashboardApiParams {
+  fromDate?: string; // ISO String
+  toDate?: string;   // ISO String
+}
+
+function getApiParams(period: DashboardPeriod, customRange?: DateRange): DashboardApiParams {
+  
+  if (customRange?.from && customRange?.to) {
+    return {
+      fromDate: customRange.from.toISOString(),
+      toDate: customRange.to.toISOString(),
+    };
+  }
+
+  const now = new Date();
+  const from = new Date();
+  
+  const toDate = now.toISOString();
+
+  switch (period) {
+    case 'today':
+      from.setHours(0, 0, 0, 0); 
+      break;
+    case '7days':
+      from.setDate(now.getDate() - 7);
+      break;
+    case '30days':
+      from.setDate(now.getDate() - 30);
+      break;
+    case '90days':
+      from.setDate(now.getDate() - 90);
+      break;
+    case 'year':
+      from.setFullYear(now.getFullYear() - 1);
+      break;
+    case 'all':
+      return {}; 
+    default:
+      from.setDate(now.getDate() - 30);
+  }
+
+  return {
+    fromDate: from.toISOString(),
+    toDate: toDate
+  };
+}
 export type GrowthTrend = 'up' | 'down' | 'stable';
 
 export interface TrendPoint {
@@ -19,9 +63,13 @@ export interface GrowthStats {
   trend: GrowthTrend;
 }
 
+export interface DateRangeResponse {
+  from: string;
+  to: string;
+}
 
+// --- Sub-Interfaces ---
 
-// --- User Stats ---
 export interface UserByRole {
   role: string;
   count: number;
@@ -40,41 +88,14 @@ export interface TopInstructor {
 export interface UserStatistics {
   totalUsers: number;
   byRole: UserByRole[];
-  byStatus: {
-    active: number;
-    inactive: number;
-  };
-  newUsersToday: number;
-  newUsersThisWeek: number;
-  newUsersThisMonth: number;
+  byStatus: { active: number; inactive: number };
+  newUsersInRange: number;
   userTrend: TrendPoint[];
   growth: GrowthStats;
   topInstructors: TopInstructor[];
   twoFactorEnabled: number;
   twoFactorPercentage: number;
-}
-
-// --- Course Stats ---
-export interface CourseByStatus {
-  status: string;
-  count: number;
-  percentage: number;
-}
-
-export interface CourseByLevel {
-  level: string;
-  count: number;
-  percentage: number;
-}
-
-export interface TopCourse {
-  id: string;
-  title: string;
-  thumbnail: string | null;
-  instructorId: string;
-  instructorName: string;
-  totalEnrollments: number;
-  level: string;
+  dateRange: DateRangeResponse;
 }
 
 export interface CourseStatistics {
@@ -82,57 +103,43 @@ export interface CourseStatistics {
   publishedCourses: number;
   draftCourses: number;
   archivedCourses: number;
-  byStatus: CourseByStatus[];
-  byLevel: CourseByLevel[];
-  newCoursesToday: number;
-  newCoursesThisWeek: number;
-  newCoursesThisMonth: number;
+  byStatus: Array<{ status: string; count: number; percentage: number }>;
+  byLevel: Array<{ level: string; count: number; percentage: number }>;
+  newCoursesInRange: number;
   courseTrend: TrendPoint[];
   growth: GrowthStats;
-  topCoursesByEnrollment: TopCourse[];
+  topCoursesByEnrollment: Array<{
+    id: string;
+    title: string;
+    thumbnail: string | null;
+    instructorId: string;
+    instructorName: string;
+    totalEnrollments: number;
+    level: string;
+  }>;
   totalChapters: number;
   totalLessons: number;
   averageChaptersPerCourse: number;
   averageLessonsPerCourse: number;
-}
-
-// --- Enrollment Stats ---
-export interface EnrollmentByCourse {
-  courseId: string;
-  courseTitle: string;
-  enrollmentCount: string; // Note: Backend sometimes returns numbers as strings in agg queries, check actual response
+  dateRange: DateRangeResponse;
 }
 
 export interface EnrollmentStatistics {
   totalEnrollments: number;
-  byStatus: {
-    active: number;
-    completed: number;
-    dropped: number;
-  };
-  newEnrollmentsToday: number;
-  newEnrollmentsThisWeek: number;
-  newEnrollmentsThisMonth: number;
+  byStatus: { active: number; completed: number; dropped: number };
+  newEnrollmentsInRange: number;
   enrollmentTrend: TrendPoint[];
   growth: GrowthStats;
   overallCompletionRate: number;
   averageProgress: number;
-  topCoursesByEnrollment: {
+  topCoursesByEnrollment: Array<{
     courseId: string;
     courseTitle: string;
     enrollmentCount: number;
-  }[];
+  }>;
   activeStudents: number;
   churnedStudents: number;
-}
-
-// --- Quiz Stats ---
-export interface QuizByCourse {
-  courseId: string;
-  courseTitle: string;
-  quizCount: number;
-  totalAttempts: number;
-  averageScore: number;
+  dateRange: DateRangeResponse;
 }
 
 export interface QuizStatistics {
@@ -146,47 +153,45 @@ export interface QuizStatistics {
     passRate: number;
     averageScore: number;
   };
-  newAttemptsToday: number;
-  newAttemptsThisWeek: number;
-  newAttemptsThisMonth: number;
+  newAttemptsInRange: number;
   attemptTrend: TrendPoint[];
-  quizzesByCourse: QuizByCourse[];
+  quizzesByCourse: Array<{
+    courseId: string;
+    courseTitle: string;
+    quizCount: number;
+    totalAttempts: number;
+    averageScore: number;
+  }>;
   averageQuestionsPerQuiz: number;
   averageAttemptsPerQuiz: number;
-}
-
-// --- System Stats ---
-export interface DeviceType {
-  type: string;
-  count: number;
+  dateRange: DateRangeResponse;
 }
 
 export interface SystemStatistics {
   devices: {
     totalDevices: number;
     activeDevices: number;
-    deviceTypes: DeviceType[];
+    deviceTypes: Array<{ type: string; count: number }>;
   };
   refreshTokensCount: number;
   pendingVerifications: number;
 }
 
-// --- Overview (Summary) ---
 export interface AdminOverview {
   totalUsers: number;
   totalCourses: number;
   totalEnrollments: number;
   totalQuizAttempts: number;
-  newUsersToday: number;
-  newEnrollmentsToday: number;
-  newCoursesToday: number;
+  newUsersInRange: number;
+  newEnrollmentsInRange: number;
+  newCoursesInRange: number;
   userGrowth: GrowthStats;
   enrollmentGrowth: GrowthStats;
   courseGrowth: GrowthStats;
+  dateRange: DateRangeResponse;
 }
 
-// MAIN RESPONSE INTERFACE
-
+// --- Main Full Response ---
 export interface FullAdminDashboardResponse {
   overview: AdminOverview;
   users: UserStatistics;
@@ -194,102 +199,60 @@ export interface FullAdminDashboardResponse {
   enrollments: EnrollmentStatistics;
   quizzes: QuizStatistics;
   system: SystemStatistics;
-  generatedAt: string; // ISO String
+  generatedAt: string;
 }
 
-// API CALLS
-
+// 4. API CALLS
 /**
  * Get full admin dashboard data
  * Endpoint: /dashboard/admin/full
  */
 export const getAdminDashboardFull = async (
-  period: DashboardPeriod = '30days'
+  period: DashboardPeriod = '30days',
+  customRange?: DateRange 
 ): Promise<FullAdminDashboardResponse> => {
+  
+  const params = getApiParams(period, customRange);
+
   const response = await api.get<FullAdminDashboardResponse>(
     `${API_ENDPOINT.DASHBOARD}/full`,
-    { params: { period } }
+    { params } 
   );
   return response.data;
 };
 
-/**
- * Get only overview stats (lighter payload)
- * Endpoint: /dashboard/admin/overview
- */
-export const getAdminDashboardOverview = async (
-  period: DashboardPeriod = '30days'
-): Promise<AdminOverview> => {
-  const response = await api.get<AdminOverview>(
-    `${API_ENDPOINT.DASHBOARD}/overview`,
-    { params: { period } }
-  );
+// --- Các hàm lẻ (Optional usage) ---
+export const getAdminDashboardOverview = async (period: DashboardPeriod = '30days', customRange?: DateRange): Promise<AdminOverview> => {
+  const params = getApiParams(period, customRange);
+  const response = await api.get<AdminOverview>(`${API_ENDPOINT.DASHBOARD}/overview`, { params });
   return response.data;
 };
 
-/**
- * Get only user statistics
- * Endpoint: /dashboard/admin/users
- */
-export const getAdminDashboardUsers = async (
-  period: DashboardPeriod = '30days'
-): Promise<UserStatistics> => {
-  const response = await api.get<UserStatistics>(
-    `${API_ENDPOINT.DASHBOARD}/users`,
-    { params: { period } }
-  );
+export const getAdminDashboardUsers = async (period: DashboardPeriod = '30days', customRange?: DateRange): Promise<UserStatistics> => {
+  const params = getApiParams(period, customRange);
+  const response = await api.get<UserStatistics>(`${API_ENDPOINT.DASHBOARD}/users`, { params });
   return response.data;
 };
 
-/**
- * Get only course statistics
- * Endpoint: /dashboard/admin/courses
- */
-export const getAdminDashboardCourses = async (
-  period: DashboardPeriod = '30days'
-): Promise<CourseStatistics> => {
-  const response = await api.get<CourseStatistics>(
-    `${API_ENDPOINT.DASHBOARD}/courses`,
-    { params: { period } }
-  );
+export const getAdminDashboardCourses = async (period: DashboardPeriod = '30days', customRange?: DateRange): Promise<CourseStatistics> => {
+  const params = getApiParams(period, customRange);
+  const response = await api.get<CourseStatistics>(`${API_ENDPOINT.DASHBOARD}/courses`, { params });
   return response.data;
 };
 
-/**
- * Get only enrollment statistics
- * Endpoint: /dashboard/admin/enrollments
- */
-export const getAdminDashboardEnrollments = async (
-  period: DashboardPeriod = '30days'
-): Promise<EnrollmentStatistics> => {
-  const response = await api.get<EnrollmentStatistics>(
-    `${API_ENDPOINT.DASHBOARD}/enrollments`,
-    { params: { period } }
-  );
+export const getAdminDashboardEnrollments = async (period: DashboardPeriod = '30days', customRange?: DateRange): Promise<EnrollmentStatistics> => {
+  const params = getApiParams(period, customRange);
+  const response = await api.get<EnrollmentStatistics>(`${API_ENDPOINT.DASHBOARD}/enrollments`, { params });
   return response.data;
 };
 
-/**
- * Get only quiz statistics
- * Endpoint: /dashboard/admin/quizzes
- */
-export const getAdminDashboardQuizzes = async (
-  period: DashboardPeriod = '30days'
-): Promise<QuizStatistics> => {
-  const response = await api.get<QuizStatistics>(
-    `${API_ENDPOINT.DASHBOARD}/quizzes`,
-    { params: { period } }
-  );
+export const getAdminDashboardQuizzes = async (period: DashboardPeriod = '30days', customRange?: DateRange): Promise<QuizStatistics> => {
+  const params = getApiParams(period, customRange);
+  const response = await api.get<QuizStatistics>(`${API_ENDPOINT.DASHBOARD}/quizzes`, { params });
   return response.data;
 };
 
-/**
- * Get system statistics
- * Endpoint: /dashboard/admin/system
- */
 export const getAdminDashboardSystem = async (): Promise<SystemStatistics> => {
-  const response = await api.get<SystemStatistics>(
-    `${API_ENDPOINT.DASHBOARD}/system`
-  );
+  const response = await api.get<SystemStatistics>(`${API_ENDPOINT.DASHBOARD}/system`);
   return response.data;
 };

@@ -2,6 +2,11 @@ import { Injectable } from '@nestjs/common'
 import { PrismaService } from 'src/shared/services/prisma.service'
 import { TrendPointType } from './dashboard.model'
 
+export type DateRange = {
+  from: Date
+  to: Date
+}
+
 @Injectable()
 export class DashboardRepository {
   constructor(private prismaService: PrismaService) {}
@@ -10,8 +15,22 @@ export class DashboardRepository {
   // USER QUERIES
   // =============================================
 
-  async countUsers(where?: { createdAt?: { gte?: Date; lt?: Date }; deletedAt?: null }) {
-    return this.prismaService.user.count({ where: { deletedAt: null, ...where } })
+  async countUsers(dateRange?: DateRange) {
+    return this.prismaService.user.count({
+      where: {
+        deletedAt: null,
+        ...(dateRange && {
+          createdAt: {
+            gte: dateRange.from,
+            lte: dateRange.to,
+          },
+        }),
+      },
+    })
+  }
+
+  async countAllUsers() {
+    return this.prismaService.user.count({ where: { deletedAt: null } })
   }
 
   async countUsersByStatus(status: 'ACTIVE' | 'INACTIVE') {
@@ -54,12 +73,30 @@ export class DashboardRepository {
   // COURSE QUERIES
   // =============================================
 
-  async countCourses(where?: {
-    createdAt?: { gte?: Date; lt?: Date }
-    status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
-    level?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
-  }) {
-    return this.prismaService.course.count({ where: { deletedAt: null, ...where } })
+  async countCourses(
+    options?: {
+      dateRange?: DateRange
+      status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
+      level?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
+    },
+  ) {
+    return this.prismaService.course.count({
+      where: {
+        deletedAt: null,
+        ...(options?.status && { status: options.status }),
+        ...(options?.level && { level: options.level }),
+        ...(options?.dateRange && {
+          createdAt: {
+            gte: options.dateRange.from,
+            lte: options.dateRange.to,
+          },
+        }),
+      },
+    })
+  }
+
+  async countAllCourses() {
+    return this.prismaService.course.count({ where: { deletedAt: null } })
   }
 
   async getCoursesWithEnrollments(limit: number = 20) {
@@ -85,8 +122,21 @@ export class DashboardRepository {
   // ENROLLMENT QUERIES
   // =============================================
 
-  async countEnrollments(where?: { enrolledAt?: { gte?: Date; lt?: Date } }) {
-    return this.prismaService.enrollment.count({ where })
+  async countEnrollments(dateRange?: DateRange) {
+    return this.prismaService.enrollment.count({
+      where: dateRange
+        ? {
+            enrolledAt: {
+              gte: dateRange.from,
+              lte: dateRange.to,
+            },
+          }
+        : undefined,
+    })
+  }
+
+  async countAllEnrollments() {
+    return this.prismaService.enrollment.count()
   }
 
   async getAllEnrollments() {
@@ -140,8 +190,21 @@ export class DashboardRepository {
     return this.prismaService.question.count()
   }
 
-  async countQuizAttempts(where?: { startedAt?: { gte?: Date; lt?: Date } }) {
-    return this.prismaService.studentQuizAttempt.count({ where })
+  async countQuizAttempts(dateRange?: DateRange) {
+    return this.prismaService.studentQuizAttempt.count({
+      where: dateRange
+        ? {
+            startedAt: {
+              gte: dateRange.from,
+              lte: dateRange.to,
+            },
+          }
+        : undefined,
+    })
+  }
+
+  async countAllQuizAttempts() {
+    return this.prismaService.studentQuizAttempt.count()
   }
 
   async getAllQuizAttempts() {
@@ -200,36 +263,42 @@ export class DashboardRepository {
   // TREND DATA
   // =============================================
 
-  async getUserTrend(days: number): Promise<TrendPointType[]> {
-    return this.getTrendData('user', days)
+  async getUserTrend(dateRange: DateRange): Promise<TrendPointType[]> {
+    return this.getTrendData('user', dateRange)
   }
 
-  async getCourseTrend(days: number): Promise<TrendPointType[]> {
-    return this.getTrendData('course', days)
+  async getCourseTrend(dateRange: DateRange): Promise<TrendPointType[]> {
+    return this.getTrendData('course', dateRange)
   }
 
-  async getEnrollmentTrend(days: number): Promise<TrendPointType[]> {
-    return this.getTrendData('enrollment', days)
+  async getEnrollmentTrend(dateRange: DateRange): Promise<TrendPointType[]> {
+    return this.getTrendData('enrollment', dateRange)
   }
 
-  async getQuizAttemptTrend(days: number): Promise<TrendPointType[]> {
-    return this.getTrendData('studentQuizAttempt', days)
+  async getQuizAttemptTrend(dateRange: DateRange): Promise<TrendPointType[]> {
+    return this.getTrendData('studentQuizAttempt', dateRange)
   }
 
   private async getTrendData(
     model: 'user' | 'course' | 'enrollment' | 'studentQuizAttempt',
-    days: number,
+    dateRange: DateRange,
   ): Promise<TrendPointType[]> {
     const result: TrendPointType[] = []
-    const today = new Date()
 
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(date.getDate() - i)
+    // Tính số ngày giữa from và to
+    const diffTime = Math.abs(dateRange.to.getTime() - dateRange.from.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
+
+    for (let i = 0; i < diffDays; i++) {
+      const date = new Date(dateRange.from)
+      date.setDate(date.getDate() + i)
       date.setHours(0, 0, 0, 0)
 
       const nextDate = new Date(date)
       nextDate.setDate(nextDate.getDate() + 1)
+
+      // Không vượt quá toDate
+      if (date > dateRange.to) break
 
       let count: number
 

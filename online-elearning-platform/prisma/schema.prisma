@@ -54,6 +54,7 @@ model User {
   quizAttempts        StudentQuizAttempt[]
   devices Device[]
   refreshTokens RefreshToken[]
+  lessonProgress LessonProgress[]
 
   // Auditing relations
   createdCourses Course[] @relation("CreatedCourses")
@@ -218,6 +219,7 @@ model Lesson {
 
   chapterId String  @db.ObjectId
   chapter   Chapter @relation(fields: [chapterId], references: [id])
+  lessonProgress LessonProgress[]
 
   deletedAt DateTime?
   createdAt DateTime  @default(now())
@@ -234,6 +236,7 @@ model Enrollment {
 
   courseId String @db.ObjectId
   course   Course @relation(fields: [courseId], references: [id])
+  lessonProgress LessonProgress[]
 
   enrolledAt DateTime @default(now())
   progress    Float   @default(0) // % hoàn thành (0-100)
@@ -297,6 +300,29 @@ model StudentQuizAttempt {
   timeSpentSeconds Int
   isPassed         Boolean
   answers          Json // [{questionId, selectedAnswerIndex, isCorrect}]
+}
+
+model LessonProgress {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  
+  lessonId       String   @db.ObjectId
+  lesson         Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  studentId      String   @db.ObjectId
+  student        User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  enrollmentId   String   @db.ObjectId
+  enrollment     Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  
+  isCompleted    Boolean  @default(false)
+  completedAt    DateTime?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@unique([studentId, lessonId])
+  @@index([enrollmentId])
+  @@index([studentId])
 }
 
 enum UserStatus {

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { DashboardRepository } from './dashboard.repository'
+import { DashboardRepository, DateRange } from './dashboard.repository'
 import {
+  DashboardQueryType,
   AdminOverviewResType,
   UserStatisticsResType,
   CourseStatisticsResType,
@@ -17,7 +18,10 @@ import {
 export class DashboardService {
   constructor(private dashboardRepository: DashboardRepository) {}
 
+  // =============================================
   // HELPERS
+  // =============================================
+
   private calculateGrowth(current: number, previous: number): GrowthStatsType {
     const growthRate = previous === 0 ? (current > 0 ? 100 : 0) : ((current - previous) / previous) * 100
 
@@ -29,69 +33,87 @@ export class DashboardService {
     }
   }
 
-  private getDateRanges() {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+  private getDateRange(query: DashboardQueryType): DateRange {
+    const to = query.toDate ? new Date(query.toDate) : new Date()
+    to.setHours(23, 59, 59, 999)
 
-    const weekAgo = new Date(today)
-    weekAgo.setDate(weekAgo.getDate() - 7)
+    const from = query.fromDate ? new Date(query.fromDate) : new Date(to)
+    if (!query.fromDate) {
+      from.setDate(from.getDate() - 30) // Default 30 ngày
+    }
+    from.setHours(0, 0, 0, 0)
 
-    const twoWeeksAgo = new Date(today)
-    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
-
-    const monthAgo = new Date(today)
-    monthAgo.setMonth(monthAgo.getMonth() - 1)
-
-    return { today, weekAgo, twoWeeksAgo, monthAgo }
+    return { from, to }
   }
 
+  private getPreviousDateRange(dateRange: DateRange): DateRange {
+    const diffTime = dateRange.to.getTime() - dateRange.from.getTime()
+
+    const previousTo = new Date(dateRange.from)
+    previousTo.setMilliseconds(previousTo.getMilliseconds() - 1)
+
+    const previousFrom = new Date(previousTo.getTime() - diffTime)
+
+    return { from: previousFrom, to: previousTo }
+  }
+
+  // =============================================
   // ADMIN OVERVIEW
-  async getAdminOverview(): Promise<AdminOverviewResType> {
-    const { today, weekAgo, twoWeeksAgo } = this.getDateRanges()
+  // =============================================
 
+  async getAdminOverview(query: DashboardQueryType): Promise<AdminOverviewResType> {
+    const dateRange = this.getDateRange(query)
+    const previousRange = this.getPreviousDateRange(dateRange)
+
+    // Totals (all time)
     const [totalUsers, totalCourses, totalEnrollments, totalQuizAttempts] = await Promise.all([
-      this.dashboardRepository.countUsers(),
-      this.dashboardRepository.countCourses(),
-      this.dashboardRepository.countEnrollments(),
-      this.dashboardRepository.countQuizAttempts(),
+      this.dashboardRepository.countAllUsers(),
+      this.dashboardRepository.countAllCourses(),
+      this.dashboardRepository.countAllEnrollments(),
+      this.dashboardRepository.countAllQuizAttempts(),
     ])
 
-    const [newUsersToday, newEnrollmentsToday, newCoursesToday] = await Promise.all([
-      this.dashboardRepository.countUsers({ createdAt: { gte: today } }),
-      this.dashboardRepository.countEnrollments({ enrolledAt: { gte: today } }),
-      this.dashboardRepository.countCourses({ createdAt: { gte: today } }),
+    // In range
+    const [newUsersInRange, newEnrollmentsInRange, newCoursesInRange] = await Promise.all([
+      this.dashboardRepository.countUsers(dateRange),
+      this.dashboardRepository.countEnrollments(dateRange),
+      this.dashboardRepository.countCourses({ dateRange }),
     ])
 
-    const [usersThisWeek, usersLastWeek, enrollmentsThisWeek, enrollmentsLastWeek, coursesThisWeek, coursesLastWeek] =
-      await Promise.all([
-        this.dashboardRepository.countUsers({ createdAt: { gte: weekAgo } }),
-        this.dashboardRepository.countUsers({ createdAt: { gte: twoWeeksAgo, lt: weekAgo } }),
-        this.dashboardRepository.countEnrollments({ enrolledAt: { gte: weekAgo } }),
-        this.dashboardRepository.countEnrollments({ enrolledAt: { gte: twoWeeksAgo, lt: weekAgo } }),
-        this.dashboardRepository.countCourses({ createdAt: { gte: weekAgo } }),
-        this.dashboardRepository.countCourses({ createdAt: { gte: twoWeeksAgo, lt: weekAgo } }),
-      ])
+    // Previous range (for growth)
+    const [usersPrevious, enrollmentsPrevious, coursesPrevious] = await Promise.all([
+      this.dashboardRepository.countUsers(previousRange),
+      this.dashboardRepository.countEnrollments(previousRange),
+      this.dashboardRepository.countCourses({ dateRange: previousRange }),
+    ])
 
     return {
       totalUsers,
       totalCourses,
       totalEnrollments,
       totalQuizAttempts,
-      newUsersToday,
-      newEnrollmentsToday,
-      newCoursesToday,
-      userGrowth: this.calculateGrowth(usersThisWeek, usersLastWeek),
-      enrollmentGrowth: this.calculateGrowth(enrollmentsThisWeek, enrollmentsLastWeek),
-      courseGrowth: this.calculateGrowth(coursesThisWeek, coursesLastWeek),
+      newUsersInRange,
+      newEnrollmentsInRange,
+      newCoursesInRange,
+      userGrowth: this.calculateGrowth(newUsersInRange, usersPrevious),
+      enrollmentGrowth: this.calculateGrowth(newEnrollmentsInRange, enrollmentsPrevious),
+      courseGrowth: this.calculateGrowth(newCoursesInRange, coursesPrevious),
+      dateRange: {
+        from: dateRange.from,
+        to: dateRange.to,
+      },
     }
   }
 
+  // =============================================
   // USER STATISTICS
+  // =============================================
 
-  async getUserStatistics(): Promise<UserStatisticsResType> {
-    const { today, weekAgo, twoWeeksAgo, monthAgo } = this.getDateRanges()
+  async getUserStatistics(query: DashboardQueryType): Promise<UserStatisticsResType> {
+    const dateRange = this.getDateRange(query)
+    const previousRange = this.getPreviousDateRange(dateRange)
 
-    const totalUsers = await this.dashboardRepository.countUsers()
+    const totalUsers = await this.dashboardRepository.countAllUsers()
 
     // By role
     const usersWithRoles = await this.dashboardRepository.getUsersWithRoles()
@@ -107,23 +129,17 @@ export class DashboardService {
       percentage: totalUsers > 0 ? Math.round((count / totalUsers) * 10000) / 100 : 0,
     }))
 
-    // By status (ACTIVE/INACTIVE from UserStatus enum)
+    // By status
     const [activeUsers, twoFactorUsers] = await Promise.all([
       this.dashboardRepository.countUsersByStatus('ACTIVE'),
       this.dashboardRepository.countTwoFactorUsers(),
     ])
 
-    // New users
-    const [newUsersToday, newUsersThisWeek, newUsersThisMonth] = await Promise.all([
-      this.dashboardRepository.countUsers({ createdAt: { gte: today } }),
-      this.dashboardRepository.countUsers({ createdAt: { gte: weekAgo } }),
-      this.dashboardRepository.countUsers({ createdAt: { gte: monthAgo } }),
-    ])
+    // In range
+    const newUsersInRange = await this.dashboardRepository.countUsers(dateRange)
 
-    // Growth
-    const usersLastWeek = await this.dashboardRepository.countUsers({
-      createdAt: { gte: twoWeeksAgo, lt: weekAgo },
-    })
+    // Previous range (for growth)
+    const usersPrevious = await this.dashboardRepository.countUsers(previousRange)
 
     // Top instructors
     const instructorRole = await this.dashboardRepository.getRoleByName('INSTRUCTOR')
@@ -145,7 +161,7 @@ export class DashboardService {
     }
 
     // Trend
-    const userTrend = await this.dashboardRepository.getUserTrend(30)
+    const userTrend = await this.dashboardRepository.getUserTrend(dateRange)
 
     return {
       totalUsers,
@@ -154,25 +170,30 @@ export class DashboardService {
         active: activeUsers,
         inactive: totalUsers - activeUsers,
       },
-      newUsersToday,
-      newUsersThisWeek,
-      newUsersThisMonth,
+      newUsersInRange,
       userTrend,
-      growth: this.calculateGrowth(newUsersThisWeek, usersLastWeek),
+      growth: this.calculateGrowth(newUsersInRange, usersPrevious),
       topInstructors,
       twoFactorEnabled: twoFactorUsers,
       twoFactorPercentage: totalUsers > 0 ? Math.round((twoFactorUsers / totalUsers) * 10000) / 100 : 0,
+      dateRange: {
+        from: dateRange.from,
+        to: dateRange.to,
+      },
     }
   }
 
+  // =============================================
   // COURSE STATISTICS
+  // =============================================
 
-  async getCourseStatistics(): Promise<CourseStatisticsResType> {
-    const { today, weekAgo, twoWeeksAgo, monthAgo } = this.getDateRanges()
+  async getCourseStatistics(query: DashboardQueryType): Promise<CourseStatisticsResType> {
+    const dateRange = this.getDateRange(query)
+    const previousRange = this.getPreviousDateRange(dateRange)
 
-    const totalCourses = await this.dashboardRepository.countCourses()
+    const totalCourses = await this.dashboardRepository.countAllCourses()
 
-    // By status (DRAFT, PUBLISHED, ARCHIVED from CourseStatus enum)
+    // By status
     const [publishedCourses, draftCourses, archivedCourses] = await Promise.all([
       this.dashboardRepository.countCourses({ status: 'PUBLISHED' }),
       this.dashboardRepository.countCourses({ status: 'DRAFT' }),
@@ -185,7 +206,7 @@ export class DashboardService {
       { status: 'ARCHIVED', count: archivedCourses, percentage: totalCourses > 0 ? (archivedCourses / totalCourses) * 100 : 0 },
     ]
 
-    // By level (BEGINNER, INTERMEDIATE, ADVANCED from CourseLevel enum)
+    // By level
     const [beginnerCourses, intermediateCourses, advancedCourses] = await Promise.all([
       this.dashboardRepository.countCourses({ level: 'BEGINNER' }),
       this.dashboardRepository.countCourses({ level: 'INTERMEDIATE' }),
@@ -198,17 +219,11 @@ export class DashboardService {
       { level: 'ADVANCED', count: advancedCourses, percentage: totalCourses > 0 ? (advancedCourses / totalCourses) * 100 : 0 },
     ]
 
-    // New courses
-    const [newCoursesToday, newCoursesThisWeek, newCoursesThisMonth] = await Promise.all([
-      this.dashboardRepository.countCourses({ createdAt: { gte: today } }),
-      this.dashboardRepository.countCourses({ createdAt: { gte: weekAgo } }),
-      this.dashboardRepository.countCourses({ createdAt: { gte: monthAgo } }),
-    ])
+    // In range
+    const newCoursesInRange = await this.dashboardRepository.countCourses({ dateRange })
 
-    // Growth
-    const coursesLastWeek = await this.dashboardRepository.countCourses({
-      createdAt: { gte: twoWeeksAgo, lt: weekAgo },
-    })
+    // Previous range (for growth)
+    const coursesPrevious = await this.dashboardRepository.countCourses({ dateRange: previousRange })
 
     // Top courses by enrollment
     const coursesWithEnrollments = await this.dashboardRepository.getCoursesWithEnrollments()
@@ -232,7 +247,7 @@ export class DashboardService {
     ])
 
     // Trend
-    const courseTrend = await this.dashboardRepository.getCourseTrend(30)
+    const courseTrend = await this.dashboardRepository.getCourseTrend(dateRange)
 
     return {
       totalCourses,
@@ -241,43 +256,43 @@ export class DashboardService {
       archivedCourses,
       byStatus,
       byLevel,
-      newCoursesToday,
-      newCoursesThisWeek,
-      newCoursesThisMonth,
+      newCoursesInRange,
       courseTrend,
-      growth: this.calculateGrowth(newCoursesThisWeek, coursesLastWeek),
+      growth: this.calculateGrowth(newCoursesInRange, coursesPrevious),
       topCoursesByEnrollment,
       totalChapters,
       totalLessons,
       averageChaptersPerCourse: totalCourses > 0 ? Math.round((totalChapters / totalCourses) * 100) / 100 : 0,
       averageLessonsPerCourse: totalCourses > 0 ? Math.round((totalLessons / totalCourses) * 100) / 100 : 0,
+      dateRange: {
+        from: dateRange.from,
+        to: dateRange.to,
+      },
     }
   }
 
+  // =============================================
   // ENROLLMENT STATISTICS
-  async getEnrollmentStatistics(): Promise<EnrollmentStatisticsResType> {
-    const { today, weekAgo, twoWeeksAgo, monthAgo } = this.getDateRanges()
+  // =============================================
 
-    const totalEnrollments = await this.dashboardRepository.countEnrollments()
+  async getEnrollmentStatistics(query: DashboardQueryType): Promise<EnrollmentStatisticsResType> {
+    const dateRange = this.getDateRange(query)
+    const previousRange = this.getPreviousDateRange(dateRange)
 
-    // By status (ACTIVE, COMPLETED, DROPPED from EnrollmentStatus enum)
+    const totalEnrollments = await this.dashboardRepository.countAllEnrollments()
+
+    // By status
     const [active, completed, dropped] = await Promise.all([
       this.dashboardRepository.countEnrollmentsByStatus('ACTIVE'),
       this.dashboardRepository.countEnrollmentsByStatus('COMPLETED'),
       this.dashboardRepository.countEnrollmentsByStatus('DROPPED'),
     ])
 
-    // New enrollments
-    const [newEnrollmentsToday, newEnrollmentsThisWeek, newEnrollmentsThisMonth] = await Promise.all([
-      this.dashboardRepository.countEnrollments({ enrolledAt: { gte: today } }),
-      this.dashboardRepository.countEnrollments({ enrolledAt: { gte: weekAgo } }),
-      this.dashboardRepository.countEnrollments({ enrolledAt: { gte: monthAgo } }),
-    ])
+    // In range
+    const newEnrollmentsInRange = await this.dashboardRepository.countEnrollments(dateRange)
 
-    // Growth
-    const enrollmentsLastWeek = await this.dashboardRepository.countEnrollments({
-      enrolledAt: { gte: twoWeeksAgo, lt: weekAgo },
-    })
+    // Previous range (for growth)
+    const enrollmentsPrevious = await this.dashboardRepository.countEnrollments(previousRange)
 
     // Completion rate & average progress
     const overallCompletionRate = totalEnrollments > 0 ? Math.round((completed / totalEnrollments) * 10000) / 100 : 0
@@ -297,6 +312,9 @@ export class DashboardService {
       .slice(0, 10)
 
     // Active & churned students
+    const weekAgo = new Date()
+    weekAgo.setDate(weekAgo.getDate() - 7)
+
     const [activeStudentIds, allStudentIds] = await Promise.all([
       this.dashboardRepository.getActiveStudentIds(weekAgo),
       this.dashboardRepository.getAllStudentIds(),
@@ -306,32 +324,37 @@ export class DashboardService {
     const churnedStudents = allStudentIds.filter((s) => !activeSet.has(s.studentId)).length
 
     // Trend
-    const enrollmentTrend = await this.dashboardRepository.getEnrollmentTrend(30)
+    const enrollmentTrend = await this.dashboardRepository.getEnrollmentTrend(dateRange)
 
     return {
       totalEnrollments,
       byStatus: { active, completed, dropped },
-      newEnrollmentsToday,
-      newEnrollmentsThisWeek,
-      newEnrollmentsThisMonth,
+      newEnrollmentsInRange,
       enrollmentTrend,
-      growth: this.calculateGrowth(newEnrollmentsThisWeek, enrollmentsLastWeek),
+      growth: this.calculateGrowth(newEnrollmentsInRange, enrollmentsPrevious),
       overallCompletionRate,
       averageProgress: Math.round(avgProgress * 100) / 100,
       topCoursesByEnrollment,
       activeStudents: activeStudentIds.length,
       churnedStudents,
+      dateRange: {
+        from: dateRange.from,
+        to: dateRange.to,
+      },
     }
   }
 
+  // =============================================
   // QUIZ STATISTICS
-  async getQuizStatistics(): Promise<QuizStatisticsResType> {
-    const { today, weekAgo, monthAgo } = this.getDateRanges()
+  // =============================================
+
+  async getQuizStatistics(query: DashboardQueryType): Promise<QuizStatisticsResType> {
+    const dateRange = this.getDateRange(query)
 
     const [totalQuizzes, totalQuestions, totalAttempts] = await Promise.all([
       this.dashboardRepository.countQuizzes(),
       this.dashboardRepository.countQuestions(),
-      this.dashboardRepository.countQuizAttempts(),
+      this.dashboardRepository.countAllQuizAttempts(),
     ])
 
     // Performance
@@ -340,12 +363,8 @@ export class DashboardService {
     const totalScore = attempts.reduce((sum, a) => sum + a.score, 0)
     const averageScore = attempts.length > 0 ? Math.round((totalScore / attempts.length) * 100) / 100 : 0
 
-    // New attempts (using startedAt)
-    const [newAttemptsToday, newAttemptsThisWeek, newAttemptsThisMonth] = await Promise.all([
-      this.dashboardRepository.countQuizAttempts({ startedAt: { gte: today } }),
-      this.dashboardRepository.countQuizAttempts({ startedAt: { gte: weekAgo } }),
-      this.dashboardRepository.countQuizAttempts({ startedAt: { gte: monthAgo } }),
-    ])
+    // In range
+    const newAttemptsInRange = await this.dashboardRepository.countQuizAttempts(dateRange)
 
     // By course
     const quizzesWithAttempts = await this.dashboardRepository.getQuizzesWithAttempts()
@@ -385,7 +404,7 @@ export class DashboardService {
       .slice(0, 10)
 
     // Trend
-    const attemptTrend = await this.dashboardRepository.getQuizAttemptTrend(30)
+    const attemptTrend = await this.dashboardRepository.getQuizAttemptTrend(dateRange)
 
     return {
       totalQuizzes,
@@ -398,17 +417,22 @@ export class DashboardService {
         passRate: totalAttempts > 0 ? Math.round((passedAttempts / totalAttempts) * 10000) / 100 : 0,
         averageScore,
       },
-      newAttemptsToday,
-      newAttemptsThisWeek,
-      newAttemptsThisMonth,
+      newAttemptsInRange,
       attemptTrend,
       quizzesByCourse,
       averageQuestionsPerQuiz: totalQuizzes > 0 ? Math.round((totalQuestions / totalQuizzes) * 100) / 100 : 0,
       averageAttemptsPerQuiz: totalQuizzes > 0 ? Math.round((totalAttempts / totalQuizzes) * 100) / 100 : 0,
+      dateRange: {
+        from: dateRange.from,
+        to: dateRange.to,
+      },
     }
   }
 
+  // =============================================
   // SYSTEM STATISTICS
+  // =============================================
+
   async getSystemStatistics(): Promise<SystemStatisticsResType> {
     const yesterday = new Date()
     yesterday.setDate(yesterday.getDate() - 1)
