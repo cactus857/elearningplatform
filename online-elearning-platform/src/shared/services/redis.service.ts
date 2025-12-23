@@ -82,4 +82,9 @@ export class RedisService {
     const count = await this.redis.get(fullKey)
     return count ? parseInt(count, 10) : 0
   }
+
+  async getTTL(key: string): Promise<number> {
+    const fullKey = key.startsWith(REDIS_KEY_PREFIX.RATE_LIMIT) ? key : `${REDIS_KEY_PREFIX.RATE_LIMIT}${key}`
+    return this.redis.ttl(fullKey)
+  }
 }

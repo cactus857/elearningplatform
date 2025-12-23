@@ -13,6 +13,7 @@ import { TwoFactorAuthService } from './services/2fa.service'
 import { SharedRoleRepository } from './repositories/shared-role-repo'
 import { S3Service } from './services/s3.service'
 import { RedisService } from './services/redis.service'
+import { RateLimitGuard } from './guards/rate-limit.guard'
 
 const sharedService = [
   PrismaService,
@@ -30,6 +31,7 @@ const sharedService = [
 @Module({
   providers: [
     ...sharedService,
+    RateLimitGuard,
     AccessTokenGuard,
     APIKeyGuard,
     {

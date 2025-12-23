@@ -26,8 +26,12 @@ import envConfig from 'src/shared/config'
 import { EmptyBodyDTO } from 'src/shared/dtos/request.dto'
 import { ActiveUser } from 'src/shared/decorators/active-user.decorator'
 import { GithubService } from './gituhb.service'
+import { RateLimitGuard } from 'src/shared/guards/rate-limit.guard'
+import { UseGuards } from '@nestjs/common'
+import { RateLimit } from 'src/shared/decorators/rate-limit.decorator'
 
 @Controller('auth')
+@UseGuards(RateLimitGuard)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -53,6 +57,7 @@ export class AuthController {
   @Post('login')
   @IsPublic()
   @ZodSerializerDto(LoginResDTO)
+  @RateLimit({ limit: 5, windowSeconds: 60 })
   login(@Body() body: LoginBodyDTO, @UserAgent() userAgent: string, @Ip() ip: string) {
     return this.authService.login({
       ...body,
