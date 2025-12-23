@@ -3,6 +3,7 @@ import { InjectRedis } from '@nestjs-modules/ioredis'
 import Redis from 'ioredis'
 import { REDIS_KEY_PREFIX, REDIS_TTL } from '../constants/redis.constant'
 import * as crypto from 'crypto'
+import { parseWithDates } from '../helper'
 
 @Injectable()
 export class RedisService {
@@ -59,7 +60,7 @@ export class RedisService {
     return this.exists(key)
   }
 
-  // RATE LIMITING METHODS (Step 3)
+  // RATE LIMITING METHODS
 
   /**
    * Increment counter cho rate limiting
@@ -87,4 +88,93 @@ export class RedisService {
     const fullKey = key.startsWith(REDIS_KEY_PREFIX.RATE_LIMIT) ? key : `${REDIS_KEY_PREFIX.RATE_LIMIT}${key}`
     return this.redis.ttl(fullKey)
   }
+
+  // COURSE CACHING METHODS
+  
+/**
+ * Lưu course detail vào cache
+ */
+async setCourseDetail(courseId: string, data: any): Promise<void> {
+  const key = `${REDIS_KEY_PREFIX.COURSE_DETAIL}${courseId}`
+  await this.redis.setex(key, REDIS_TTL.COURSE_DETAIL, JSON.stringify(data))
+}
+
+/**
+ * Lấy course detail từ cache
+ */
+async getCourseDetail(courseId: string): Promise<any | null> {
+  const key = `${REDIS_KEY_PREFIX.COURSE_DETAIL}${courseId}`
+  const data = await this.redis.get(key)
+  return data ? parseWithDates(data) : null
+}
+
+/**
+ * Lưu course by slug vào cache
+ */
+async setCourseBySlug(slug: string, data: any): Promise<void> {
+  const key = `${REDIS_KEY_PREFIX.COURSE_SLUG}${slug}`
+  await this.redis.setex(key, REDIS_TTL.COURSE_DETAIL, JSON.stringify(data))
+}
+
+/**
+ * Lấy course by slug từ cache
+ */
+async getCourseBySlug(slug: string): Promise<any | null> {
+  const key = `${REDIS_KEY_PREFIX.COURSE_SLUG}${slug}`
+  const data = await this.redis.get(key)
+  return data ? parseWithDates(data) : null
+}
+
+/**
+ * Lưu course list vào cache
+ * Key format: courses:list:{queryHash}
+ */
+async setCourseList(queryHash: string, data: any): Promise<void> {
+  const key = `${REDIS_KEY_PREFIX.COURSE_LIST}${queryHash}`
+  await this.redis.setex(key, REDIS_TTL.COURSE_LIST, JSON.stringify(data))
+}
+
+/**
+ * Lấy course list từ cache
+ */
+async getCourseList(queryHash: string): Promise<any | null> {
+  const key = `${REDIS_KEY_PREFIX.COURSE_LIST}${queryHash}`
+  const data = await this.redis.get(key)
+  return data ? parseWithDates(data) : null
+}
+
+/**
+ * Invalidate cache của 1 course (detail + slug)
+ */
+async invalidateCourse(courseId: string, slug?: string): Promise<void> {
+  const keys = [`${REDIS_KEY_PREFIX.COURSE_DETAIL}${courseId}`]
+  
+  if (slug) {
+    keys.push(`${REDIS_KEY_PREFIX.COURSE_SLUG}${slug}`)
+  }
+  
+  await this.redis.del(...keys)
+}
+
+/**
+ * Invalidate tất cả course list cache
+ */
+async invalidateCourseList(): Promise<void> {
+  const pattern = `${REDIS_KEY_PREFIX.COURSE_LIST}*`
+  const keys = await this.redis.keys(pattern)
+  
+  if (keys.length > 0) {
+    await this.redis.del(...keys)
+  }
+}
+
+/**
+ * Invalidate course + all list 
+ */
+async invalidateCourseAll(courseId: string, slug?: string): Promise<void> {
+  await Promise.all([
+    this.invalidateCourse(courseId, slug),
+    this.invalidateCourseList(),
+  ])
+}
 }

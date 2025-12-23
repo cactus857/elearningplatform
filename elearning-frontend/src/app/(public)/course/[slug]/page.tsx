@@ -1,7 +1,6 @@
-import { getCourseById } from "@/services/course.service";
+import { getCourseById, getCourseBySlug } from "@/services/course.service";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Clock,
@@ -17,7 +16,6 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/utils/get-initial";
-import { Separator } from "@/components/ui/separator";
 import {
   Accordion,
   AccordionContent,
@@ -25,13 +23,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { EnrollmentStatusButton } from "./_components/EnrollmentStatusButton ";
-import { cn } from "@/lib/utils";
 
-type Params = Promise<{ courseId: string }>;
+type Params = Promise<{ slug: string }>;
 
 export default async function CourseDetailPage({ params }: { params: Params }) {
-  const { courseId } = await params;
-  const course = await getCourseById(courseId);
+  const { slug } = await params;
+  const course = await getCourseBySlug(slug);
 
   const totalLessons =
     course.chapters?.reduce((acc, ch) => acc + (ch.lessons?.length || 0), 0) ||
@@ -39,7 +36,6 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
 
   return (
     <div className="min-h-screen bg-background font-sans">
-      {/* --- HERO SECTION (Background Tối) --- */}
       <div className="relative bg-slate-900 text-slate-50 border-b border-slate-800">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px]" />

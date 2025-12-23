@@ -124,7 +124,7 @@ function CourseCardGrid({ course }: { course: CourseWithQuizzes }) {
   return (
     <div
       className="group relative bg-card rounded-2xl border border-border/50 overflow-hidden hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 flex flex-col h-full cursor-pointer hover:-translate-y-1"
-      onClick={() => router.push(`/course/${course.id}`)}
+      onClick={() => router.push(`/course/${course.slug}`)}
     >
       {/* Image Area */}
       <div className="relative aspect-video overflow-hidden bg-muted">
@@ -211,7 +211,7 @@ function CourseCardList({ course }: { course: CourseWithQuizzes }) {
   const router = useRouter();
   return (
     <div
-      onClick={() => router.push(`/course/${course.id}`)}
+      onClick={() => router.push(`/course/${course.slug}`)}
       className="group flex flex-col md:flex-row bg-card border border-border/60 rounded-2xl overflow-hidden hover:shadow-lg hover:shadow-indigo-500/5 hover:border-primary/20 transition-all duration-300 cursor-pointer p-1"
     >
       <div className="relative w-full md:w-72 aspect-video md:aspect-auto shrink-0 rounded-xl overflow-hidden">

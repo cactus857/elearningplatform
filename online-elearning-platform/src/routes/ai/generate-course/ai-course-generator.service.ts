@@ -3,6 +3,7 @@ import { AiCourseGeneratorRepository } from './ai-course-generator.repository'
 import { SaveGeneratedCourseBodyType } from './ai-course-generator.model'
 import { RoleName } from 'src/shared/constants/role.constants'
 import { CourseGeneratorWorkflow, GeneratedCourse } from '../workflows/course-generator.workflow'
+import { RedisService } from 'src/shared/services/redis.service'
 
 export interface StreamUpdate {
   type: 'planning' | 'chapter' | 'thumbnail' | 'video' | 'complete' | 'error'
@@ -17,6 +18,7 @@ export class AiCourseGeneratorService {
   constructor(
     private courseGeneratorWorkflow: CourseGeneratorWorkflow,
     private aiCourseGeneratorRepository: AiCourseGeneratorRepository,
+    private redisService: RedisService,
   ) {}
 
   async generateCourse(courseTopic: string): Promise<GeneratedCourse> {
@@ -51,6 +53,10 @@ export class AiCourseGeneratorService {
 
       // Lưu course vào database
       const savedCourse = await this.aiCourseGeneratorRepository.saveGeneratedCourse(data, instructorId, userId)
+
+      console.log('>> before save: Invalidating cache')
+      await this.redisService.invalidateCourseList()
+      console.log('>> after save: Invalidated cache')
 
       this.logger.log(`✅ Course saved successfully: ${savedCourse.id}`)
 

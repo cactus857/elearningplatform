@@ -206,6 +206,16 @@ export const getCourseById = async (
   return response.data;
 };
 
+// Get Course by Slug
+export const getCourseBySlug = async (
+  slug: string
+): Promise<ICourseDetailRes> => {
+  const response = await api.get<ICourseDetailRes>(
+    `${API_ENDPOINT.COURSES}/slug/${slug}`
+  );
+  return response.data;
+};
+
 // Course Creation
 export const createCourse = async (data: CreateCourseDto): Promise<ICourse> => {
   const response = await api.post<ICourse>(API_ENDPOINT.COURSES, data);

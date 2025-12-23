@@ -118,7 +118,7 @@ export class AccessTokenGuard implements CanActivate {
       .catch(() => {
         throw new ForbiddenException()
       })
-    console.log(role.permissions)
+    // console.log(role.permissions)
     const canAccess = role.permissions.length > 0
     if (!canAccess) {
       console.log('>>>>canAcess', canAccess)
