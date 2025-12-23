@@ -12,6 +12,7 @@ import { AuthenticationGuard } from './guards/authentication.guard'
 import { TwoFactorAuthService } from './services/2fa.service'
 import { SharedRoleRepository } from './repositories/shared-role-repo'
 import { S3Service } from './services/s3.service'
+import { RedisService } from './services/redis.service'
 
 const sharedService = [
   PrismaService,
@@ -22,6 +23,7 @@ const sharedService = [
   SharedUserRepository,
   SharedRoleRepository,
   S3Service,
+  RedisService,
 ]
 
 @Global()

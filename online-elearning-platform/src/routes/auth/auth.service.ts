@@ -38,6 +38,7 @@ import {
 } from './error.model'
 import { TwoFactorAuthService } from 'src/shared/services/2fa.service'
 import { SharedRoleRepository } from 'src/shared/repositories/shared-role-repo'
+import { RedisService } from 'src/shared/services/redis.service'
 
 @Injectable()
 export class AuthService {
@@ -49,6 +50,7 @@ export class AuthService {
     private readonly emailService: EmailService,
     private readonly tokenService: TokenService,
     private readonly twoFactorService: TwoFactorAuthService,
+    private readonly redisService: RedisService,
   ) {}
 
   async validateVerificationCode({
@@ -293,10 +295,13 @@ export class AuthService {
     return user
   }
 
-  async logout(refreshToken: string) {
+  async logout(refreshToken: string, accessToken: string) {
     try {
       // kiem tra refresh token co hop le khong
       await this.tokenService.verifyRefreshToken(refreshToken)
+      
+      // them access token vao blacklist
+      await this.redisService.addToBlacklist(accessToken)
 
       // xoa refresh token khoi db
       const deletedRefreshToken = await this.authRepository.deleteRefreshToken({ token: refreshToken })

@@ -21,9 +21,20 @@ import { AiQuizGeneratorModule } from './routes/ai/generate-quiz/ai-quiz-generat
 import { AiCourseGeneratorModule } from './routes/ai/generate-course/ai-course-generator.module'
 import { DashboardModule } from './routes/dashboard/dashboard.module'
 import { ProgressModule } from './routes/progress/progress.module'
+import { RedisModule } from '@nestjs-modules/ioredis';
+import envConfig from './shared/config'
 
 @Module({
   imports: [
+    RedisModule.forRoot({
+      type: 'single',
+      options: {
+        host: envConfig.REDIS_HOST,
+        port: parseInt(envConfig.REDIS_PORT),
+        username: envConfig.REDIS_USERNAME,
+        password: envConfig.REDIS_PASSWORD,
+      },
+    }),
     SharedModule,
     AuthModule,
     PermissionModule,

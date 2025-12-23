@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Ip, Post, Query, Res } from '@nestjs/common'
+import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Ip, Post, Query, Res } from '@nestjs/common'
 import { AuthService } from './auth.service'
 import {
   DisableTwoFactorBodyDTO,
@@ -83,8 +83,9 @@ export class AuthController {
 
   @Post('logout')
   @ZodSerializerDto(MessageResDTO)
-  logout(@Body() body: LogoutBodyDTO) {
-    return this.authService.logout(body.refreshToken)
+  logout(@Body() body: LogoutBodyDTO, @Headers('authorization') authHeader: string) {
+    const accessToken = authHeader.split(' ')[1]
+    return this.authService.logout(body.refreshToken, accessToken)
   }
 
   // -------------Google OAuth Routes----------

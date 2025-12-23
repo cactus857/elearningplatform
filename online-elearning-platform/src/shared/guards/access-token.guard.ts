@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { TokenService } from '../services/token.service'
+import { RedisService } from '../services/redis.service'
 import { REQUEST_ROLE_PERMISSIONS, REQUEST_USER_KEY } from '../constants/auth.constant'
 import { AccessTokenPayload } from '../types/jwt.type'
 import { PrismaService } from '../services/prisma.service'
@@ -45,6 +46,7 @@ export class AccessTokenGuard implements CanActivate {
   constructor(
     private readonly tokenService: TokenService,
     private readonly prismaService: PrismaService,
+    private readonly redisService: RedisService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -72,6 +74,14 @@ export class AccessTokenGuard implements CanActivate {
     const accessToken = this.extractAccessTolenFromHeader(request)
     try {
       const decodedAccessToken = await this.tokenService.verifyAccessToken(accessToken)
+
+      // Check blacklist 
+      const isBlacklisted = await this.redisService.isBlacklisted(accessToken)
+      if (isBlacklisted) {
+        console.log('Token has been revoked')
+        throw new UnauthorizedException('Token has been revoked')
+      }
+
       request[REQUEST_USER_KEY] = decodedAccessToken
       return decodedAccessToken
     } catch (error) {

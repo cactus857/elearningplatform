@@ -46,6 +46,10 @@ const configSchema = z.object({
   YOUTUBE_API_KEY: z.string(),
   AIGURU_API_KEY: z.string(),
   AIGURU_API_URL: z.string(),
+  REDIS_HOST: z.string(),
+  REDIS_PORT: z.string(),
+  REDIS_PASSWORD: z.string(),
+  REDIS_USERNAME: z.string(),
 })
 
 const configServer = configSchema.safeParse(process.env)
