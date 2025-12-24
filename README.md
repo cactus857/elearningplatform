@@ -1,6 +1,6 @@
 # 📚 E-Learning Platform
 
-An AI-powered E-Learning Platform built with **Next.js 15**, **NestJS**, **MongoDB**, and **OpenAI**.
+An AI-powered E-Learning Platform built with **Next.js 15**, **NestJS 11**, **MongoDB**, **Redis**, **Elasticsearch**, and **OpenAI**.
 
 ---
 
@@ -9,8 +9,7 @@ An AI-powered E-Learning Platform built with **Next.js 15**, **NestJS**, **Mongo
 ```
 Elearning-Platform/
 ├── elearning-frontend/         # Next.js 15 Frontend (React 19)
-├── online-elearning-platform/  # NestJS Backend
-├── mcp-ai/                     # Cloudflare Worker MCP AI Service
+├── online-elearning-platform/  # NestJS 11 Backend
 └── BaoCao/                     # Project reports/documents
 ```
 
@@ -23,6 +22,8 @@ Elearning-Platform/
 - **Node.js** >= 18.x
 - **npm** >= 9.x
 - **MongoDB** (Atlas or local)
+- **Redis** (Cloud or local)
+- **Elasticsearch** (Cloud recommended)
 
 ---
 
@@ -88,7 +89,6 @@ npm run dev
 
 ---
 
-
 ## 📋 Available Scripts
 
 ### Backend (`online-elearning-platform/`)
@@ -100,12 +100,13 @@ npm run dev
 | `npm run start:dev`      | Start in development mode (watch)     |
 | `npm run start`          | Start in production mode              |
 | `npm run build`          | Build for production                  |
+| `npm run start:prod`     | Run production build                  |
 | `npm run init-seed-data` | Seed initial data to database         |
 
 ### Frontend (`elearning-frontend/`)
 
 | Command          | Description                        |
-|------------------|------------------------------------|
+|------------------|------------------------------------| 
 | `npm install`    | Install dependencies               |
 | `npm run dev`    | Start dev server (port 3300)       |
 | `npm run build`  | Build for production               |
@@ -152,77 +153,192 @@ npm run dev
 - 📊 Platform analytics
 
 ### AI Features
-- 🤖 **AI Course Generator** - Generate complete courses from a topic
+- 🤖 **AI Course Generator** - Generate complete courses from a topic using LangChain
 - 🧠 **AI Quiz Generator** - Auto-generate quizzes from course content
-- 💬 **AI Tutor** - Interactive AI assistant
+- 💬 **AI Tutor** - Interactive AI assistant powered by OpenAI
 
 ---
-
-## 📄 Available Pages (27 Total)
-
-### 🔓 Public Pages (No Login Required)
-
-| Page | URL |
-|------|-----|
-| Home | `/` |
-| Courses List | `/course` |
-| Course Detail | `/course/[courseId]` |
-| Quiz Bank | `/quiz` |
-| Quiz Detail | `/quiz/[quizId]` |
-| Quiz Attempt | `/quiz/[quizId]/attempt/[attemptId]` |
-| Quiz Result | `/quiz/[quizId]/result/[attemptId]` |
-
-### 🔐 Auth Pages
-
-| Page | URL |
-|------|-----|
-| Sign In | `/sign-in` |
-| Sign Up | `/sign-up` |
-| Forgot Password | `/forgot-password` |
-| Google OAuth Callback | `/oauth-google-callback` |
-| GitHub OAuth Callback | `/oauth-github-callback` |
-
-### 📊 Dashboard Pages (Login Required)
-
-| Page | URL |
-|------|-----|
-| Dashboard Home | `/dashboard` |
-| Profile | `/dashboard/profile` |
-| Courses Management | `/dashboard/courses` |
-| Create Course | `/dashboard/courses/create` |
-| Edit Course | `/dashboard/courses/[courseId]/edit` |
-| Learning (Student View) | `/dashboard/learning/[enrollmentId]` |
-| Quizzes Management | `/dashboard/quizzes` |
-| Quiz Detail | `/dashboard/quizzes/[quizId]` |
-| Create Quiz | `/dashboard/quizzes/create` |
-| Edit Quiz | `/dashboard/quizzes/[quizId]/edit` |
-| Users Management | `/dashboard/users` |
-| Roles Management | `/dashboard/roles` |
-
-### 🤖 AI Assistant Pages
-
-| Page | URL |
-|------|-----|
-| AI Assistant Home | `/dashboard/ai-assistant` |
-| AI Course Generator | `/dashboard/ai-assistant/course-generator` |
-| AI Quiz Generator | `/dashboard/ai-assistant/quiz-generator` |
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- Next.js 15 (App Router)
-- React 19
-- TailwindCSS 4
-- Radix UI (shadcn/ui)
-- React Query
-- React Hook Form + Zod
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Next.js | 15 | React framework with App Router |
+| React | 19 | UI library |
+| TailwindCSS | 4 | Utility-first CSS |
+| Radix UI | - | Accessible component primitives (shadcn/ui) |
+| React Query | 5 | Server state management |
+| React Hook Form | 7 | Form handling |
+| Zod | 4 | Schema validation |
+| Framer Motion | 12 | Animations |
+| Axios | 1.12 | HTTP client |
 
 ### Backend
-- NestJS 11
-- Prisma ORM + MongoDB
-- JWT Authentication
-- LangChain + OpenAI
-- AWS S3
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| NestJS | 11 | Node.js framework |
+| Prisma | 6 | ORM for MongoDB |
+| MongoDB | - | Primary database |
+| Redis | - | Caching & session management |
+| Elasticsearch | 9 | Full-text search |
+| BullMQ | 5 | Background job processing |
+| JWT | - | Authentication |
+| LangChain | 1.0 | AI orchestration |
+| OpenAI | - | GPT models for AI features |
+| AWS S3 | - | File storage |
+| Resend | - | Email service |
+
+---
+
+## 🗄️ Database Architecture
+
+### MongoDB (Primary Database)
+The application uses MongoDB with Prisma ORM. Key collections:
+
+| Collection | Description |
+|------------|-------------|
+| `User` | User accounts with roles and 2FA |
+| `Role` | Role definitions with permissions |
+| `Permission` | API endpoint permissions (path + method) |
+| `Course` | Course metadata and settings |
+| `Chapter` | Course chapters (ordered) |
+| `Lesson` | Video/document/text lessons |
+| `Enrollment` | Student-course relationships |
+| `Quiz` | Quiz configurations |
+| `Question` | Quiz questions with options |
+| `StudentQuizAttempt` | Quiz attempt records |
+| `LessonProgress` | Lesson completion tracking |
+| `Device` | User device sessions |
+| `RefreshToken` | JWT refresh tokens |
+
+---
+
+## 🔴 Redis Configuration
+
+Redis is used for:
+- **Caching** - Course lists, course details, user sessions
+- **Rate limiting** - API request throttling
+- **Session management** - Refresh token storage
+- **Background jobs** - BullMQ queue backend
+
+### Redis Environment Variables
+
+```env
+REDIS_HOST=your-redis-host
+REDIS_PORT=6379
+REDIS_USERNAME=default
+REDIS_PASSWORD=your-redis-password
+```
+
+### Cache Strategies
+| Data | TTL | Pattern |
+|------|-----|---------|
+| Course list | 5 min | Query hash-based keys |
+| Course detail | 10 min | ID-based keys |
+| Course by slug | 10 min | Slug-based keys |
+
+---
+
+## 🔍 Elasticsearch Configuration
+
+Elasticsearch powers the full-text search functionality:
+- **Course search** - Search by title, description, category
+- **Real-time indexing** - Courses indexed via BullMQ jobs
+- **Cloud-hosted** - Uses Elastic Cloud for reliability
+
+### Elasticsearch Environment Variables
+
+```env
+ELASTICSEARCH_CLOUD_ID=your-cloud-id
+ELASTICSEARCH_USERNAME=elastic
+ELASTICSEARCH_PASSWORD=your-password
+ELASTICSEARCH_INDEX_COURSES=courses
+```
+
+### Index Operations
+| Job | Description |
+|-----|-------------|
+| `INDEX_COURSE` | Index new course |
+| `UPDATE_COURSE` | Update course in index |
+| `DELETE_COURSE` | Remove course from index |
+
+### Search Features
+- Fuzzy matching for typo tolerance
+- Field boosting (title > description)
+- Category filtering
+- Level filtering
+
+---
+
+## 🔐 Authentication & Security
+
+### Authentication Flow
+1. User logs in with email/password or OAuth (Google/GitHub)
+2. Server returns `accessToken` (15min) + `refreshToken` (7 days)
+3. Access token attached to all API requests
+4. Auto-refresh on 401 errors via Axios interceptor
+
+### Two-Factor Authentication (2FA)
+- TOTP-based (Google Authenticator compatible)
+- Setup via QR code
+- Required for sensitive operations
+
+### Role-Based Access Control (RBAC)
+| Role | Permissions |
+|------|-------------|
+| Admin | Full access to all resources |
+| Instructor | Manage own courses, view enrolled students |
+| Student | Browse courses, enroll, take quizzes |
+
+---
+
+## 📁 API Structure
+
+### Auth Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/login` | User login |
+| POST | `/auth/register` | User registration |
+| POST | `/auth/refresh-token` | Refresh access token |
+| POST | `/auth/logout` | User logout |
+| GET | `/auth/google-link` | Get Google OAuth URL |
+| GET | `/auth/github-link` | Get GitHub OAuth URL |
+| POST | `/auth/2fa/setup` | Setup 2FA |
+| POST | `/auth/2fa/enable` | Enable 2FA |
+| POST | `/auth/2fa/disable` | Disable 2FA |
+
+### Resource Endpoints
+| Resource | Base Path | Operations |
+|----------|-----------|------------|
+| Users | `/users` | CRUD |
+| Roles | `/roles` | CRUD |
+| Permissions | `/permissions` | CRUD |
+| Courses | `/courses` | CRUD + `/manage` + `/slug/:slug` |
+| Chapters | `/chapters` | CRUD + `/reorder` |
+| Lessons | `/lessons` | CRUD + `/reorder` |
+| Enrollments | `/enrollments` | CRUD + `/enroll` + `/my-courses` |
+| Quizzes | `/quizzes` | CRUD + `/start` + `/submit` |
+| AI Courses | `/ai/courses` | `/generate` + `/save` |
+| AI Quizzes | `/ai/quizzes` | `/generate-from-course` + `/save` |
+| Dashboard | `/dashboard/admin` | Analytics data |
+| Media | `/media` | File upload |
+| Profile | `/profile` | Get/Update profile |
+
+---
+
+## 🚢 Deployment
+
+### Backend (Render)
+The backend is configured for Render deployment with:
+- `render.yaml` - Render blueprint
+- `Procfile` - Process definition
+
+### Frontend (Vercel)
+The frontend is optimized for Vercel deployment:
+- Automatic builds on push
+- Edge functions support
+- Image optimization
 
 ---
 
