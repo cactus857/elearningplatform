@@ -39,3 +39,30 @@ export const parseWithDates = (json: string): any => {
       return value
     })
   }
+
+  // HELPER
+  export const transformCourseToDocument = (course: any): any => {
+    return {
+      id: course.id,
+      title: course.title,
+      description: course.description,
+      smallDescription: course.smallDescription,
+      slug: course.slug,
+      category: course.category,
+      level: course.level,
+      status: course.status,
+      thumbnail: course.thumbnail,
+      duration: course.duration,
+      instructor: course.instructor
+        ? {
+            id: course.instructor.id,
+            fullName: course.instructor.fullName,
+            email: course.instructor.email,
+            avatar: course.instructor.avatar,
+          }
+        : null,
+      enrollmentCount: course._count?.enrollments || 0,
+      createdAt: course.createdAt,
+      updatedAt: course.updatedAt,
+    }
+  }

@@ -50,6 +50,10 @@ const configSchema = z.object({
   REDIS_PORT: z.string(),
   REDIS_PASSWORD: z.string(),
   REDIS_USERNAME: z.string(),
+  ELASTICSEARCH_CLOUD_ID: z.string(),
+  ELASTICSEARCH_INDEX_COURSES: z.string(),
+  ELASTICSEARCH_USERNAME: z.string(),
+  ELASTICSEARCH_PASSWORD: z.string(),
 })
 
 const configServer = configSchema.safeParse(process.env)

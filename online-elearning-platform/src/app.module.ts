@@ -23,6 +23,11 @@ import { DashboardModule } from './routes/dashboard/dashboard.module'
 import { ProgressModule } from './routes/progress/progress.module'
 import { RedisModule } from '@nestjs-modules/ioredis';
 import envConfig from './shared/config'
+import { ElasticsearchModule } from '@nestjs/elasticsearch'
+import { BullModule } from '@nestjs/bullmq'
+import { QUEUE_NAMES } from './shared/constants/queue.constant'
+import { ElasticsearchProcessor } from './shared/processors/elasticsearch.processor'
+import { SearchModule } from './routes/elasticsearch/search.module'
 
 @Module({
   imports: [
@@ -34,6 +39,37 @@ import envConfig from './shared/config'
         username: envConfig.REDIS_USERNAME,
         password: envConfig.REDIS_PASSWORD,
       },
+    }),
+    ElasticsearchModule.registerAsync({
+      useFactory: () => ({
+        cloud:{id: envConfig.ELASTICSEARCH_CLOUD_ID},
+        auth: {
+          username: envConfig.ELASTICSEARCH_USERNAME,
+          password: envConfig.ELASTICSEARCH_PASSWORD,
+        },
+      })
+    }),
+    BullModule.forRoot({
+      connection: {
+        host: envConfig.REDIS_HOST,
+        port: parseInt(envConfig.REDIS_PORT),
+        username: envConfig.REDIS_USERNAME,
+        password: envConfig.REDIS_PASSWORD,
+      },
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 1000, // 1s 
+        },
+        removeOnComplete: 100,
+        removeOnFail: 50 
+      }
+    }),
+
+    // Register Queue
+    BullModule.registerQueue({
+      name: QUEUE_NAMES.ELASTICSEARCH,
     }),
     SharedModule,
     AuthModule,
@@ -51,10 +87,12 @@ import envConfig from './shared/config'
     AiQuizGeneratorModule,
     DashboardModule,
     ProgressModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
+    ElasticsearchProcessor,
     {
       provide: APP_PIPE,
       useClass: CustomZodValidationPipe,

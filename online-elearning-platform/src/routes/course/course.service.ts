@@ -8,10 +8,15 @@ import { isNotFoundPrismaError } from 'src/shared/helper'
 import slugify from 'slugify'
 import { RedisService } from 'src/shared/services/redis.service'
 import * as crypto from 'crypto'
+import { InjectQueue } from '@nestjs/bullmq'
+import { Queue } from 'bullmq'
+import { QUEUE_NAMES, JOB_NAMES } from 'src/shared/constants/queue.constant'
 
 @Injectable()
 export class CourseService {
-  constructor(private courseRepository: CourseRepository, private redisService: RedisService) {}
+  constructor(private courseRepository: CourseRepository, private redisService: RedisService,
+     @InjectQueue(QUEUE_NAMES.ELASTICSEARCH) private esQueue: Queue,
+  ) {}
 
   private generateSlug(title: string): string {
     const slug = slugify(title, { lower: true, strict: true })
@@ -142,6 +147,13 @@ export class CourseService {
       // Save to cache
       await this.redisService.invalidateCourseList()
 
+      const courseWithInstructor = await this.courseRepository.findById(course.id)
+      await this.esQueue.add(
+      JOB_NAMES.INDEX_COURSE,
+      { course: courseWithInstructor },
+      { priority: 1 } 
+    )
+
       return course
     } catch (error) {
       throw error
@@ -197,6 +209,12 @@ export class CourseService {
         await this.redisService.invalidateCourse(id, newSlug)
       }
 
+      const courseWithInstructor = await this.courseRepository.findById(id)
+      await this.esQueue.add(
+      JOB_NAMES.UPDATE_COURSE,
+      { courseId: id, course: courseWithInstructor }
+    )
+
       return updatedCourse
     } catch (error) {
       if (isNotFoundPrismaError(error)) throw NotFoundRecordException
@@ -217,6 +235,11 @@ export class CourseService {
       await this.courseRepository.delete({ id, deletedById })
 
       await this.redisService.invalidateCourseAll(id, course.slug)
+
+      await this.esQueue.add(
+        JOB_NAMES.DELETE_COURSE,
+        { courseId: id }
+      )
 
       return { message: 'Course deleted successfully' }
     } catch (error) {

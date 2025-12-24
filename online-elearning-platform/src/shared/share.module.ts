@@ -14,6 +14,9 @@ import { SharedRoleRepository } from './repositories/shared-role-repo'
 import { S3Service } from './services/s3.service'
 import { RedisService } from './services/redis.service'
 import { RateLimitGuard } from './guards/rate-limit.guard'
+import { ElasticsearchService } from './services/elasticsearch.service'
+import { ElasticsearchModule } from '@nestjs/elasticsearch'
+import envConfig from './config'
 
 const sharedService = [
   PrismaService,
@@ -25,6 +28,7 @@ const sharedService = [
   SharedRoleRepository,
   S3Service,
   RedisService,
+  ElasticsearchService,
 ]
 
 @Global()
@@ -40,6 +44,16 @@ const sharedService = [
     },
   ],
   exports: sharedService,
-  imports: [JwtModule],
+  imports: [JwtModule,
+    ElasticsearchModule.registerAsync({
+      useFactory: () => ({
+        cloud:{id: envConfig.ELASTICSEARCH_CLOUD_ID},
+        auth: {
+          username: envConfig.ELASTICSEARCH_USERNAME,
+          password: envConfig.ELASTICSEARCH_PASSWORD,
+        },
+      }),
+    }),
+  ],
 })
 export class SharedModule {}
