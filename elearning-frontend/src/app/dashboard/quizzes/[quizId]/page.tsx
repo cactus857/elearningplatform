@@ -242,7 +242,7 @@ export default function QuizDetailPage() {
     };
 
     const getQuizStatus = () => {
-        if (!quiz) return { label: "Unknown", color: "bg-gray-500/10 text-gray-600" };
+        if (!quiz) return { label: "Unknown", color: "bg-gray-500/10 text-gray-600 dark:text-gray-400" };
 
         const now = new Date();
         const availableFrom = quiz.availableFrom ? new Date(quiz.availableFrom) : null;
@@ -263,7 +263,7 @@ export default function QuizDetailPage() {
         if (availableTo && now > availableTo) {
             return {
                 label: "Closed",
-                color: "bg-slate-500/10 text-slate-600 border-slate-500/20",
+                color: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
             };
         }
         return {

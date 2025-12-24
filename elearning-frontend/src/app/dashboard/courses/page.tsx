@@ -216,7 +216,7 @@ export default function CoursesPage() {
             <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
               Course Management
             </h1>
-            <p className="max-w-xl text-slate-400">
+            <p className="max-w-xl text-muted-foreground">
               Oversee your curriculum, track enrollment analytics, and manage
               student progress.
             </p>
@@ -225,7 +225,7 @@ export default function CoursesPage() {
           <Link href="/dashboard/courses/create">
             <Button
               size="lg"
-              className="h-12 rounded-md bg-white text-slate-900 hover:bg-slate-100 font-semibold px-6 shadow-lg shadow-black/20 border-0"
+              className="h-12 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-6 shadow-lg shadow-black/20 border-0"
             >
               <Plus className="mr-2 h-5 w-5" />
               Create New Course
@@ -319,8 +319,8 @@ export default function CoursesPage() {
                     {levelFilter === "all"
                       ? "All Levels"
                       : LEVEL_STYLES[levelFilter as keyof typeof LEVEL_STYLES]
-                      ? levelFilter
-                      : "Level"}
+                        ? levelFilter
+                        : "Level"}
                   </span>
                 </div>
               </SelectTrigger>

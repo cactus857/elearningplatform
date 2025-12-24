@@ -108,7 +108,7 @@ const HeroSection = ({ totalItems }: { totalItems: number }) => (
       <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70 animate-in fade-in slide-in-from-bottom-5 duration-700 delay-100">
         Unlock Your Potential
       </h1>
-      <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200">
+      <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200">
         Access <span className="font-semibold text-white">{totalItems}+</span>{" "}
         premium courses taught by industry experts. Start your learning journey
         today.

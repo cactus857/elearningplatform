@@ -144,7 +144,7 @@ const StepProgress = ({ current }: { current: string }) => {
 const ProcessingLog = () => {
   return (
     // Luôn sử dụng text sáng màu (zinc-400/300) vì nền terminal luôn đen
-    <div className="font-mono text-[10px] text-zinc-400 space-y-1.5 opacity-90">
+    <div className="font-mono text-[10px] text-muted-foreground space-y-1.5 opacity-90">
       <div className="flex gap-2">
         <span className="text-emerald-400">✔</span>{" "}
         <span>Initializing NLP engine...</span>
@@ -159,7 +159,7 @@ const ProcessingLog = () => {
       </div>
       <div className="flex gap-2 animate-pulse">
         <span className="text-primary">➤</span>{" "}
-        <span className="text-zinc-100">Awaiting parameters...</span>
+        <span className="text-foreground">Awaiting parameters...</span>
       </div>
     </div>
   );
@@ -980,7 +980,7 @@ const AIQuizGenerator = () => {
                                   ? "bg-emerald-500 border-emerald-500 text-white"
                                   : "border-muted-foreground bg-background",
                                 editingQuestionId === question.id &&
-                                  "cursor-pointer hover:border-emerald-500"
+                                "cursor-pointer hover:border-emerald-500"
                               )}
                             >
                               {question.correctAnswerIndex === optIdx && (
