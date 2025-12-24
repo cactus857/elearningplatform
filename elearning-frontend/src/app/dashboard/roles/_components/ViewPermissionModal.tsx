@@ -35,7 +35,7 @@ export function ViewPermissionModal({
         "bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400",
       DELETE: "bg-red-500/10 text-red-600 dark:bg-red-500/20 dark:text-red-400",
     };
-    return colors[method] || "bg-gray-500/10 text-gray-600";
+    return colors[method] || "bg-gray-500/10 text-gray-600 dark:text-gray-400";
   };
 
   return (

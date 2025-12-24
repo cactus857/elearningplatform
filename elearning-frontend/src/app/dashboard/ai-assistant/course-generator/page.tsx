@@ -114,7 +114,7 @@ const AIAvatar = () => (
 
 const UserAvatar = () => (
   <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0 shadow-sm z-10">
-    <User className="w-4 h-4 text-zinc-300" />
+    <User className="w-4 h-4 text-muted-foreground" />
   </div>
 );
 
@@ -267,8 +267,7 @@ const AICourseGenerator = () => {
         const courseData = response.data as CourseData;
         setGeneratedCourse(courseData);
         addMessage(
-          `✅ Course Generated: "${courseData.title}".\nIt includes ${
-            courseData.chapters.length
+          `✅ Course Generated: "${courseData.title}".\nIt includes ${courseData.chapters.length
           } chapters and ${courseData.chapters.reduce(
             (acc, ch) => acc + ch.lessons.length,
             0
@@ -418,8 +417,8 @@ const AICourseGenerator = () => {
                   message.type === "user"
                     ? "bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-2xl rounded-tr-sm shadow-indigo-500/20"
                     : message.type === "system"
-                    ? "bg-amber-50/80 backdrop-blur-sm border border-amber-200/60 text-amber-900 rounded-xl rounded-tl-sm font-mono text-xs flex items-center gap-3 shadow-sm"
-                    : "bg-white/80 dark:bg-zinc-900/90 backdrop-blur-md border border-white/40 dark:border-white/10 text-foreground rounded-2xl rounded-tl-sm shadow-sm"
+                      ? "bg-amber-50/80 backdrop-blur-sm border border-amber-200/60 text-amber-900 rounded-xl rounded-tl-sm font-mono text-xs flex items-center gap-3 shadow-sm"
+                      : "bg-white/80 dark:bg-zinc-900/90 backdrop-blur-md border border-white/40 dark:border-white/10 text-foreground rounded-2xl rounded-tl-sm shadow-sm"
                 )}
               >
                 {message.type === "system" &&
@@ -496,7 +495,7 @@ const AICourseGenerator = () => {
                     "rounded-full w-11 h-11 shrink-0 transition-all duration-300 ml-2",
                     inputValue.trim()
                       ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 scale-100"
-                      : "bg-zinc-100 text-zinc-400 scale-90"
+                      : "bg-muted text-muted-foreground scale-90"
                   )}
                 >
                   {isGenerating ? (

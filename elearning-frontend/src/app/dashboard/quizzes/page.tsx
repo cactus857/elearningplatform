@@ -350,7 +350,7 @@ export default function QuizzesPage() {
     if (availableTo && now > availableTo)
       return {
         label: "Closed",
-        color: "bg-slate-500/10 text-slate-600 border-slate-500/20",
+        color: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
       };
     return {
       label: "Active",
@@ -377,7 +377,7 @@ export default function QuizzesPage() {
             <h1 className="text-4xl font-extrabold tracking-tight text-white md:text-5xl">
               Quiz Manager
             </h1>
-            <p className="max-w-xl text-lg text-slate-400 font-light">
+            <p className="max-w-xl text-lg text-muted-foreground font-light">
               Create engaging assessments, track learner progress, and analyze
               performance metrics in one central hub.
             </p>
@@ -385,7 +385,7 @@ export default function QuizzesPage() {
           <Link href="/dashboard/quizzes/create">
             <Button
               size="lg"
-              className="h-14 px-8 rounded-2xl bg-white text-slate-950 hover:bg-slate-100 hover:scale-105 transition-all shadow-xl font-semibold text-base"
+              className="h-14 px-8 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 transition-all shadow-xl font-semibold text-base"
             >
               <Plus className="h-5 w-5 mr-2" />
               Create New Quiz
