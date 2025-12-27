@@ -28,7 +28,7 @@ import { GetQuizzesForAdminQuerySchema, GetQuizzesQuerySchema } from './quizz.mo
 
 @Controller('quizzes')
 export class QuizController {
-  constructor(private readonly quizService: QuizService) {}
+  constructor(private readonly quizService: QuizService) { }
 
   @Get()
   @IsPublic()
@@ -150,6 +150,21 @@ export class QuizController {
   ) {
     return this.quizService.delete({
       id: params.quizId,
+      userId,
+      userRoleName: roleName,
+    })
+  }
+
+  @Post(':quizId/duplicate')
+  duplicateToCourses(
+    @Param() params: GetQuizParamsDTO,
+    @Body() body: { courseIds: string[] },
+    @ActiveUser('userId') userId: string,
+    @ActiveRolePermissions('name') roleName: string,
+  ) {
+    return this.quizService.duplicateToCourses({
+      quizId: params.quizId,
+      targetCourseIds: body.courseIds,
       userId,
       userRoleName: roleName,
     })

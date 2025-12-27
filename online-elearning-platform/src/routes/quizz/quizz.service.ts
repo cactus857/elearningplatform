@@ -28,7 +28,7 @@ export class QuizService {
     private quizRepository: QuizRepository,
     private courseRepository: CourseRepository,
     private enrollmentRepository: EnrollmentRepository,
-  ) {}
+  ) { }
 
   async list(query: GetQuizzesQueryType) {
     return this.quizRepository.list(query)
@@ -331,5 +331,70 @@ export class QuizService {
 
   async getMyAttempts(studentId: string, quizId: string) {
     return this.quizRepository.getStudentAttempts(studentId, quizId)
+  }
+
+  // Duplicate quiz to multiple courses (repost feature)
+  async duplicateToCourses({
+    quizId,
+    targetCourseIds,
+    userId,
+    userRoleName,
+  }: {
+    quizId: string
+    targetCourseIds: string[]
+    userId: string
+    userRoleName: string
+  }) {
+    // Get the original quiz with questions
+    const originalQuiz = await this.quizRepository.findById(quizId)
+    if (!originalQuiz) throw NotFoundRecordException
+
+    // Check permission
+    if (userRoleName === RoleName.Instructor && originalQuiz.course.instructorId !== userId) {
+      throw new ForbiddenException('You can only duplicate quizzes from your own courses')
+    }
+
+    const createdQuizzes = []
+
+    for (const courseId of targetCourseIds) {
+      // Verify target course exists and user has access
+      const targetCourse = await this.courseRepository.findById(courseId)
+      if (!targetCourse) continue
+
+      if (userRoleName === RoleName.Instructor && targetCourse.instructorId !== userId) {
+        continue // Skip courses instructor doesn't own
+      }
+
+      // Create duplicate quiz
+      const newQuiz = await this.quizRepository.create({
+        data: {
+          title: originalQuiz.title,
+          courseId,
+          chapterId: null, // Reset chapter since it's a different course
+          timeLimitMinutes: originalQuiz.timeLimitMinutes,
+          passingScore: originalQuiz.passingScore,
+          maxAttempts: originalQuiz.maxAttempts,
+          availableFrom: originalQuiz.availableFrom?.toISOString() || null,
+          availableTo: originalQuiz.availableTo?.toISOString() || null,
+          shuffleQuestions: originalQuiz.shuffleQuestions,
+          shuffleOptions: originalQuiz.shuffleOptions,
+          showCorrectAnswers: originalQuiz.showCorrectAnswers,
+          questions: originalQuiz.questions.map((q) => ({
+            text: q.text,
+            options: q.options,
+            correctAnswerIndex: q.correctAnswerIndex,
+            explanation: q.explanation,
+          })),
+        },
+      })
+
+      createdQuizzes.push(newQuiz)
+    }
+
+    return {
+      message: `Quiz duplicated to ${createdQuizzes.length} course(s) successfully`,
+      createdCount: createdQuizzes.length,
+      quizzes: createdQuizzes,
+    }
   }
 }
