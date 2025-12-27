@@ -29,6 +29,11 @@ import {
   type ILesson,
   type IChapter,
 } from "@/services/enrollment.service";
+import {
+  completeLesson as completeLessonApi,
+  uncompleteLesson as uncompleteLessonApi,
+  getCourseProgress,
+} from "@/services/progress.service";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -92,6 +97,7 @@ export default function LearningPage({ params }: { params: Params }) {
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(
     new Set()
   );
+  const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
   // Unwrap params
   useEffect(() => {
@@ -113,6 +119,22 @@ export default function LearningPage({ params }: { params: Params }) {
       const data = await getEnrollmentById(enrollmentId);
       console.log(">>> Enrollment Data:", data);
       setEnrollmentData(data);
+
+      // Load existing progress from backend
+      try {
+        const progressData = await getCourseProgress(data.course.id);
+        const completedIds = new Set<string>();
+        progressData.chapters.forEach((chapter) => {
+          chapter.lessons.forEach((lesson) => {
+            if (lesson.isCompleted) {
+              completedIds.add(lesson.lessonId);
+            }
+          });
+        });
+        setCompletedLessons(completedIds);
+      } catch (progressError) {
+        console.log("No existing progress found");
+      }
 
       // Auto select first lesson
       if (
@@ -150,13 +172,22 @@ export default function LearningPage({ params }: { params: Params }) {
     setCurrentChapter(chapter);
   };
 
-  const markAsComplete = () => {
-    if (currentLesson) {
-      setCompletedLessons((prev) => new Set(prev).add(currentLesson.id));
-      toast.success("Lesson marked as complete!");
+  const markAsComplete = async () => {
+    if (currentLesson && !isMarkingComplete) {
+      setIsMarkingComplete(true);
+      try {
+        await completeLessonApi(currentLesson.id);
+        setCompletedLessons((prev) => new Set(prev).add(currentLesson.id));
+        toast.success("Lesson marked as complete!");
 
-      // Auto navigate to next lesson
-      goToNextLesson();
+        // Auto navigate to next lesson
+        goToNextLesson();
+      } catch (error) {
+        console.error("Error marking lesson complete:", error);
+        toast.error("Failed to save progress. Please try again.");
+      } finally {
+        setIsMarkingComplete(false);
+      }
     }
   };
 
@@ -455,8 +486,8 @@ export default function LearningPage({ params }: { params: Params }) {
         <div className="text-center space-y-4">
           <BookOpen className="h-16 w-16 text-muted-foreground mx-auto" />
           <p className="text-muted-foreground">Course not found</p>
-          <Button onClick={() => router.push("/my-courses")}>
-            Back to My Courses
+          <Button onClick={() => router.push("/dashboard/my-learning")}>
+            Back to My Learning
           </Button>
         </div>
       </div>
@@ -486,7 +517,7 @@ export default function LearningPage({ params }: { params: Params }) {
         {/* Course Header */}
         <div className="p-4 border-b space-y-3">
           <div className="flex items-center justify-between">
-            <Link href="/my-courses">
+            <Link href="/dashboard/my-learning">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
@@ -620,10 +651,13 @@ export default function LearningPage({ params }: { params: Params }) {
             size="sm"
             onClick={markAsComplete}
             disabled={
-              currentLesson ? completedLessons.has(currentLesson.id) : true
+              isMarkingComplete ||
+              (currentLesson ? completedLessons.has(currentLesson.id) : true)
             }
           >
-            {currentLesson && completedLessons.has(currentLesson.id) ? (
+            {isMarkingComplete ? (
+              "Saving..."
+            ) : currentLesson && completedLessons.has(currentLesson.id) ? (
               <>
                 <CheckCircle2 className="h-4 w-4 mr-2 text-green-600 dark:text-green-400" />
                 Completed
