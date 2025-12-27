@@ -84,7 +84,7 @@ export default function Home() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
-              href="/courses"
+              href="/course"
               className={buttonVariants({
                 size: "lg",
                 className:
