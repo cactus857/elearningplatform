@@ -39,6 +39,40 @@ const WHITELISTED_ROUTES = [
     path: '/profile/change-password',
     method: 'PUT',
   },
+  // Lesson Progress routes - for students to track their learning
+  {
+    path: '/lesson-progress/my-courses',
+    method: 'GET',
+  },
+  {
+    path: '/lesson-progress/course/:courseId',
+    method: 'GET',
+  },
+  {
+    path: '/lesson-progress/:lessonId',
+    method: 'GET',
+  },
+  {
+    path: '/lesson-progress/:lessonId/complete',
+    method: 'POST',
+  },
+  {
+    path: '/lesson-progress/:lessonId/uncomplete',
+    method: 'POST',
+  },
+  // Enrollment routes - for students to manage their enrollments
+  {
+    path: '/enrollments/my-courses',
+    method: 'GET',
+  },
+  {
+    path: '/enrollments/enroll',
+    method: 'POST',
+  },
+  {
+    path: '/enrollments/unenroll/:courseId',
+    method: 'DELETE',
+  },
 ]
 
 @Injectable()
@@ -47,7 +81,7 @@ export class AccessTokenGuard implements CanActivate {
     private readonly tokenService: TokenService,
     private readonly prismaService: PrismaService,
     private readonly redisService: RedisService,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest()
