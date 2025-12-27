@@ -296,17 +296,22 @@ ELASTICSEARCH_INDEX_COURSES=courses
 ## 📁 API Structure
 
 ### Auth Endpoints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/auth/login` | User login |
-| POST | `/auth/register` | User registration |
-| POST | `/auth/refresh-token` | Refresh access token |
-| POST | `/auth/logout` | User logout |
-| GET | `/auth/google-link` | Get Google OAuth URL |
-| GET | `/auth/github-link` | Get GitHub OAuth URL |
-| POST | `/auth/2fa/setup` | Setup 2FA |
-| POST | `/auth/2fa/enable` | Enable 2FA |
-| POST | `/auth/2fa/disable` | Disable 2FA |
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/auth/register` | User registration | ❌ |
+| POST | `/auth/otp` | Send OTP verification code | ❌ |
+| POST | `/auth/login` | User login (rate limited: 5/min) | ❌ |
+| GET | `/auth/me` | Get current user profile | ✅ |
+| POST | `/auth/refresh-token` | Refresh access token | ❌ |
+| POST | `/auth/logout` | User logout | ✅ |
+| POST | `/auth/forgot-password` | Request password reset | ❌ |
+| GET | `/auth/google-link` | Get Google OAuth URL | ❌ |
+| GET | `/auth/google/callback` | Google OAuth callback | ❌ |
+| GET | `/auth/github-link` | Get GitHub OAuth URL | ❌ |
+| GET | `/auth/github/callback` | GitHub OAuth callback | ❌ |
+| POST | `/auth/2fa/setup` | Setup two-factor authentication | ✅ |
+| POST | `/auth/2fa/enable` | Enable 2FA with TOTP code | ✅ |
+| POST | `/auth/2fa/disable` | Disable 2FA | ✅ |
 
 ### Resource Endpoints
 | Resource | Base Path | Operations |
