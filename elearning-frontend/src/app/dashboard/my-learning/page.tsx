@@ -29,6 +29,22 @@ import {
 import { getInitials } from "@/utils/get-initial";
 import { cn } from "@/lib/utils";
 
+// Helper function to get progress bar color based on percentage
+const getProgressColor = (percentage: number, isCompleted: boolean): string => {
+    if (isCompleted) return "bg-emerald-500";
+    if (percentage < 50) return "bg-red-500";
+    if (percentage < 70) return "bg-orange-500";
+    return "bg-emerald-500";
+};
+
+// Helper function to get progress text color
+const getProgressTextColor = (percentage: number, isCompleted: boolean): string => {
+    if (isCompleted) return "text-emerald-600 dark:text-emerald-400";
+    if (percentage < 50) return "text-red-600 dark:text-red-400";
+    if (percentage < 70) return "text-orange-600 dark:text-orange-400";
+    return "text-emerald-600 dark:text-emerald-400";
+};
+
 export default function MyLearningPage() {
     const router = useRouter();
     const [enrollments, setEnrollments] = useState<IMyCourseEnrollment[]>([]);
@@ -170,7 +186,7 @@ export default function MyLearningPage() {
                                         <div
                                             className={cn(
                                                 "h-full transition-all",
-                                                isCompleted ? "bg-emerald-500" : "bg-primary"
+                                                getProgressColor(progressPercent, isCompleted)
                                             )}
                                             style={{ width: `${progressPercent}%` }}
                                         />
@@ -186,9 +202,12 @@ export default function MyLearningPage() {
                                         ) : (
                                             <Badge
                                                 variant="secondary"
-                                                className="bg-background/80 backdrop-blur-sm"
+                                                className={cn(
+                                                    "bg-background/80 backdrop-blur-sm font-semibold",
+                                                    getProgressTextColor(progressPercent, isCompleted)
+                                                )}
                                             >
-                                                {progressPercent}% Complete
+                                                {Math.round(progressPercent)}% Complete
                                             </Badge>
                                         )}
                                     </div>

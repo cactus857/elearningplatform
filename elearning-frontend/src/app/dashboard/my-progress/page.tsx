@@ -25,6 +25,30 @@ import {
 } from "@/services/progress.service";
 import { cn } from "@/lib/utils";
 
+// Helper function to get progress bar color based on percentage
+const getProgressColor = (percentage: number, isCompleted: boolean): string => {
+    if (isCompleted) return "[&>div]:bg-emerald-500";
+    if (percentage < 50) return "[&>div]:bg-red-500";
+    if (percentage < 70) return "[&>div]:bg-orange-500";
+    return "[&>div]:bg-emerald-500";
+};
+
+// Helper function to get progress text color
+const getProgressTextColor = (percentage: number, isCompleted: boolean): string => {
+    if (isCompleted) return "text-emerald-600 dark:text-emerald-400";
+    if (percentage < 50) return "text-red-600 dark:text-red-400";
+    if (percentage < 70) return "text-orange-600 dark:text-orange-400";
+    return "text-emerald-600 dark:text-emerald-400";
+};
+
+// Helper function to get border color
+const getProgressBorderColor = (percentage: number, isCompleted: boolean): string => {
+    if (isCompleted) return "border-emerald-500/50";
+    if (percentage < 50) return "border-red-500/30";
+    if (percentage < 70) return "border-orange-500/30";
+    return "border-emerald-500/30";
+};
+
 export default function MyProgressPage() {
     const router = useRouter();
     const [progress, setProgress] = useState<IProgressSummary[]>([]);
@@ -209,15 +233,20 @@ export default function MyProgressPage() {
                                 key={course.enrollmentId}
                                 className={cn(
                                     "overflow-hidden transition-all hover:shadow-lg cursor-pointer group",
-                                    course.isCompleted && "border-emerald-500/50"
+                                    getProgressBorderColor(course.progressPercentage, course.isCompleted)
                                 )}
                                 onClick={() =>
                                     router.push(`/dashboard/learning/${course.enrollmentId}`)
                                 }
                             >
-                                {course.isCompleted && (
-                                    <div className="h-1 bg-gradient-to-r from-emerald-400 to-emerald-600" />
-                                )}
+                                {/* Color indicator bar at top */}
+                                <div className={cn(
+                                    "h-1",
+                                    course.isCompleted ? "bg-gradient-to-r from-emerald-400 to-emerald-600" :
+                                        course.progressPercentage < 50 ? "bg-gradient-to-r from-red-400 to-red-600" :
+                                            course.progressPercentage < 70 ? "bg-gradient-to-r from-orange-400 to-orange-600" :
+                                                "bg-gradient-to-r from-emerald-400 to-emerald-600"
+                                )} />
                                 <CardHeader className="pb-2">
                                     <div className="flex items-start justify-between gap-2">
                                         <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
@@ -240,15 +269,18 @@ export default function MyProgressPage() {
                                     <div className="space-y-2">
                                         <div className="flex justify-between text-sm">
                                             <span className="text-muted-foreground">Progress</span>
-                                            <span className="font-medium">
-                                                {course.progressPercentage}%
+                                            <span className={cn(
+                                                "font-semibold",
+                                                getProgressTextColor(course.progressPercentage, course.isCompleted)
+                                            )}>
+                                                {Math.round(course.progressPercentage)}%
                                             </span>
                                         </div>
                                         <Progress
                                             value={course.progressPercentage}
                                             className={cn(
                                                 "h-2",
-                                                course.isCompleted && "[&>div]:bg-emerald-500"
+                                                getProgressColor(course.progressPercentage, course.isCompleted)
                                             )}
                                         />
                                     </div>
