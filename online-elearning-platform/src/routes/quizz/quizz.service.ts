@@ -354,7 +354,7 @@ export class QuizService {
       throw new ForbiddenException('You can only duplicate quizzes from your own courses')
     }
 
-    const createdQuizzes = []
+    const createdQuizzes: any[] = []
 
     for (const courseId of targetCourseIds) {
       // Verify target course exists and user has access
@@ -374,8 +374,8 @@ export class QuizService {
           timeLimitMinutes: originalQuiz.timeLimitMinutes,
           passingScore: originalQuiz.passingScore,
           maxAttempts: originalQuiz.maxAttempts,
-          availableFrom: originalQuiz.availableFrom?.toISOString() || null,
-          availableTo: originalQuiz.availableTo?.toISOString() || null,
+          availableFrom: originalQuiz.availableFrom || undefined,
+          availableTo: originalQuiz.availableTo || undefined,
           shuffleQuestions: originalQuiz.shuffleQuestions,
           shuffleOptions: originalQuiz.shuffleOptions,
           showCorrectAnswers: originalQuiz.showCorrectAnswers,
@@ -383,7 +383,7 @@ export class QuizService {
             text: q.text,
             options: q.options,
             correctAnswerIndex: q.correctAnswerIndex,
-            explanation: q.explanation,
+            explanation: q.explanation ?? null,
           })),
         },
       })
