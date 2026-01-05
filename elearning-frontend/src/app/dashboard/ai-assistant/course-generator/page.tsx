@@ -159,9 +159,13 @@ const AIAvatar = () => (
   </div>
 );
 
-const UserAvatar = () => (
-  <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0 shadow-sm z-10">
-    <User className="w-4 h-4 text-muted-foreground" />
+const UserAvatar = ({ avatar }: { avatar?: string | null }) => (
+  <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0 shadow-sm ring-2 ring-purple-100 z-10 overflow-hidden">
+    {avatar ? (
+      <img src={avatar} alt="User" className="w-full h-full object-cover" />
+    ) : (
+      <User className="w-4 h-4 text-zinc-400" />
+    )}
   </div>
 );
 
@@ -269,9 +273,9 @@ const ChatHistoryItem = ({
     >
       <div className="flex-1 min-w-0">
         <p className={cn(
-          "text-sm font-medium truncate",
+          "text-sm font-medium truncate max-w-[280px]",
           isActive ? "text-indigo-700 dark:text-indigo-300" : "text-foreground"
-        )}>
+        )} title={session.title}>
           {session.title}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">
@@ -785,13 +789,13 @@ const AICourseGenerator = () => {
     <div className="flex h-[calc(100vh-4rem)] bg-slate-50 dark:bg-slate-950 relative overflow-hidden font-sans text-sm">
       <BackgroundStyles />
 
-      {/* 1. PROFESSIONAL ANIMATED BACKGROUND */}
+      {/* 1. PROFESSIONAL ANIMATED BACKGROUND - Full width */}
       <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute inset-0 z-0 bg-noise opacity-[0.4] mix-blend-soft-light"></div>
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob dark:mix-blend-normal dark:bg-purple-900/40"></div>
-        <div className="absolute top-0 -right-4 w-72 h-72 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000 dark:mix-blend-normal dark:bg-indigo-900/40"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000 dark:mix-blend-normal dark:bg-blue-900/40"></div>
-        <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-[80px]"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob dark:mix-blend-normal dark:bg-purple-900/40"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000 dark:mix-blend-normal dark:bg-indigo-900/40"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000 dark:mix-blend-normal dark:bg-blue-900/40"></div>
+        <div className="absolute inset-0 bg-white/50 dark:bg-black/50 backdrop-blur-[100px]"></div>
       </div>
 
       {/* LEFT SIDE: CHAT */}
@@ -970,7 +974,7 @@ const AICourseGenerator = () => {
                   </div>
                 )}
               </div>
-              {message.type === "user" && <UserAvatar />}
+              {message.type === "user" && <UserAvatar avatar={user?.avatar} />}
             </div>
           ))}
 
