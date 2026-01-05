@@ -264,7 +264,7 @@ const ChatHistoryItem = ({
   return (
     <div
       className={cn(
-        "group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all",
+        "group flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all w-full",
         isActive
           ? "bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800"
           : "hover:bg-muted/50 border border-transparent"
