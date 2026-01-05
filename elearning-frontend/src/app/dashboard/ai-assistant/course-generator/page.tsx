@@ -326,14 +326,19 @@ const AICourseGenerator = () => {
       const saved = localStorage.getItem(getStorageKey("sessions"));
       if (saved) {
         try {
-          return JSON.parse(saved, (key, value) => {
-            if (key === "timestamp" || key === "createdAt" || key === "updatedAt") {
-              return new Date(value);
-            }
-            return value;
-          });
+          const parsed = JSON.parse(saved);
+          // Properly convert date strings back to Date objects
+          return parsed.map((session: any) => ({
+            ...session,
+            createdAt: new Date(session.createdAt),
+            updatedAt: new Date(session.updatedAt),
+            messages: session.messages.map((msg: any) => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp),
+            })),
+          }));
         } catch (e) {
-          console.error(e);
+          console.error("Error loading sessions:", e);
         }
       }
     }
@@ -790,7 +795,7 @@ const AICourseGenerator = () => {
                     Your previous course generation sessions
                   </SheetDescription>
                 </SheetHeader>
-                <div className="mt-6">
+                <div className="mt-6 px-1">
                   <Button
                     onClick={createNewSession}
                     className="w-full gap-2 mb-4"
