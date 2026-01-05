@@ -73,6 +73,11 @@ const WHITELISTED_ROUTES = [
     path: '/enrollments/unenroll/:courseId',
     method: 'DELETE',
   },
+  // Quiz duplicate route - for instructors/admins to repost quizzes
+  {
+    path: '/quizzes/:quizId/duplicate',
+    method: 'POST',
+  },
 ]
 
 @Injectable()
