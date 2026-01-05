@@ -15,7 +15,7 @@ export class GithubService {
     private readonly authRepository: AuthRepository,
     private readonly sharedRoleRepository: SharedRoleRepository,
     private readonly authService: AuthService,
-  ) {}
+  ) { }
 
   getAuthorizationURL({ userAgent, ip }: GoogleAuthStateType) {
     const stateString = Buffer.from(JSON.stringify({ userAgent, ip })).toString('base64')
@@ -113,6 +113,7 @@ export class GithubService {
           phoneNumber: '',
           roleId: clientRoleId,
           avatar: userData.avatar_url || null,
+          status: 'ACTIVE', // GitHub verified email, so set status to ACTIVE
         })
       }
 
