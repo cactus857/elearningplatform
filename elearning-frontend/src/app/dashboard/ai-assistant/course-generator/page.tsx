@@ -1051,10 +1051,6 @@ const AICourseGenerator = () => {
                 </Button>
               </div>
             </div>
-            <p className="text-center text-[11px] text-muted-foreground/70 mt-4 flex items-center justify-center gap-1.5 font-medium tracking-wide">
-              <Sparkles className="w-3 h-3 text-indigo-500" />
-              {generatedCourse ? "Keep chatting to refine your course" : "AI Architect by LH Pro"}
-            </p>
           </div>
         </div>
       </div>
