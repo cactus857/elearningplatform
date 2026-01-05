@@ -21,11 +21,16 @@ import {
   FileVideo,
   Terminal,
   Sparkles,
+  Edit3,
+  RefreshCw,
+  MessageSquare,
+  PenLine,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { aiGenerateCourse, aiSaveCourse } from "@/services/ai.service";
+import { Textarea } from "@/components/ui/textarea";
+import { aiGenerateCourse, aiRefineCourse, aiSaveCourse } from "@/services/ai.service";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -42,6 +47,7 @@ interface Message {
   type: MessageType;
   content: string;
   timestamp: Date;
+  isRefinement?: boolean;
 }
 
 interface CourseData {
@@ -132,6 +138,72 @@ const AILoadingBubble = () => (
   </div>
 );
 
+// Editable Field Component
+const EditableField = ({
+  value,
+  onChange,
+  label,
+  multiline = false,
+  className = "",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  label: string;
+  multiline?: boolean;
+  className?: string;
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(value);
+
+  const handleSave = () => {
+    onChange(editValue);
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setEditValue(value);
+    setIsEditing(false);
+  };
+
+  if (isEditing) {
+    return (
+      <div className={cn("relative", className)}>
+        {multiline ? (
+          <Textarea
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            className="min-h-[100px] resize-none"
+            autoFocus
+          />
+        ) : (
+          <Input
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            autoFocus
+          />
+        )}
+        <div className="flex gap-2 mt-2">
+          <Button size="sm" onClick={handleSave}>Save</Button>
+          <Button size="sm" variant="ghost" onClick={handleCancel}>Cancel</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "group cursor-pointer hover:bg-muted/50 p-2 -m-2 rounded-lg transition-colors relative",
+        className
+      )}
+      onClick={() => setIsEditing(true)}
+    >
+      <span>{value}</span>
+      <PenLine className="w-3 h-3 absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity" />
+    </div>
+  );
+};
+
 const AICourseGenerator = () => {
   const router = useRouter();
   const { user } = useAuth();
@@ -166,6 +238,7 @@ const AICourseGenerator = () => {
 
   const [inputValue, setInputValue] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRefining, setIsRefining] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -191,6 +264,8 @@ const AICourseGenerator = () => {
     new Set()
   );
   const [showPreview, setShowPreview] = useState(false);
+  const [editingChapter, setEditingChapter] = useState<number | null>(null);
+  const [editingLesson, setEditingLesson] = useState<{ chapter: number; lesson: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -215,7 +290,7 @@ const AICourseGenerator = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isGenerating]);
+  }, [messages, isGenerating, isRefining]);
 
   // --- FUNCTIONS ---
   const triggerFireworks = () => {
@@ -242,7 +317,7 @@ const AICourseGenerator = () => {
     }, 250);
   };
 
-  const addMessage = (content: string, type: MessageType) => {
+  const addMessage = (content: string, type: MessageType, isRefinement = false) => {
     setMessages((prev) => [
       ...prev,
       {
@@ -250,41 +325,73 @@ const AICourseGenerator = () => {
         type,
         content,
         timestamp: new Date(),
+        isRefinement,
       },
     ]);
   };
 
-  const handleGenerateCourse = async () => {
+  const handleSubmit = async () => {
     if (!inputValue.trim()) return;
     const userInput = inputValue;
     setInputValue("");
-    addMessage(userInput, "user");
-    setIsGenerating(true);
 
-    try {
-      const response = await aiGenerateCourse(userInput);
-      if (response && response.success && response.data) {
-        const courseData = response.data as CourseData;
-        setGeneratedCourse(courseData);
-        addMessage(
-          `✅ Course Generated: "${courseData.title}".\nIt includes ${courseData.chapters.length
-          } chapters and ${courseData.chapters.reduce(
-            (acc, ch) => acc + ch.lessons.length,
-            0
-          )} lessons.\n\nClick "Preview" to see the details!`,
-          "assistant"
-        );
-        toast.success("Course generated successfully");
-      } else {
-        throw new Error("Failed to generate course");
+    // If we have a generated course, treat this as a refinement request
+    if (generatedCourse) {
+      addMessage(userInput, "user", true);
+      setIsRefining(true);
+
+      try {
+        const response = await aiRefineCourse(generatedCourse, userInput);
+        if (response && response.success && response.data) {
+          const refinedCourse = response.data as CourseData;
+          setGeneratedCourse(refinedCourse);
+          addMessage(
+            `✅ Course updated based on your feedback!\n\nChanges applied to "${refinedCourse.title}".\n\nFeel free to ask for more changes or click "Save & Publish" when you're satisfied.`,
+            "assistant",
+            true
+          );
+          toast.success("Course refined successfully");
+        } else {
+          throw new Error("Failed to refine course");
+        }
+      } catch (error: any) {
+        const errorMessage =
+          error?.response?.data?.message || error?.message || "Connection Error";
+        addMessage(`❌ ${errorMessage}. Please try again.`, "assistant");
+        toast.error(errorMessage);
+      } finally {
+        setIsRefining(false);
       }
-    } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.message || error?.message || "Connection Error";
-      addMessage(`❌ ${errorMessage}. Please try again.`, "assistant");
-      toast.error(errorMessage);
-    } finally {
-      setIsGenerating(false);
+    } else {
+      // No course yet, generate a new one
+      addMessage(userInput, "user");
+      setIsGenerating(true);
+
+      try {
+        const response = await aiGenerateCourse(userInput);
+        if (response && response.success && response.data) {
+          const courseData = response.data as CourseData;
+          setGeneratedCourse(courseData);
+          addMessage(
+            `✅ Course Generated: "${courseData.title}".\nIt includes ${courseData.chapters.length
+            } chapters and ${courseData.chapters.reduce(
+              (acc, ch) => acc + ch.lessons.length,
+              0
+            )} lessons.\n\n💡 You can now:\n• Click "Preview" to see the details\n• Type feedback to refine the course (e.g. "Add more advanced topics" or "Make it shorter")\n• Edit directly in the preview panel`,
+            "assistant"
+          );
+          toast.success("Course generated successfully");
+        } else {
+          throw new Error("Failed to generate course");
+        }
+      } catch (error: any) {
+        const errorMessage =
+          error?.response?.data?.message || error?.message || "Connection Error";
+        addMessage(`❌ ${errorMessage}. Please try again.`, "assistant");
+        toast.error(errorMessage);
+      } finally {
+        setIsGenerating(false);
+      }
     }
   };
 
@@ -330,6 +437,32 @@ const AICourseGenerator = () => {
     if (newExpanded.has(chapterIndex)) newExpanded.delete(chapterIndex);
     else newExpanded.add(chapterIndex);
     setExpandedChapters(newExpanded);
+  };
+
+  // Update course field directly
+  const updateCourseField = (field: keyof CourseData, value: any) => {
+    if (!generatedCourse) return;
+    setGeneratedCourse({ ...generatedCourse, [field]: value });
+  };
+
+  // Update chapter title
+  const updateChapterTitle = (chapterIndex: number, title: string) => {
+    if (!generatedCourse) return;
+    const newChapters = [...generatedCourse.chapters];
+    newChapters[chapterIndex] = { ...newChapters[chapterIndex], title };
+    setGeneratedCourse({ ...generatedCourse, chapters: newChapters });
+    setEditingChapter(null);
+  };
+
+  // Update lesson
+  const updateLesson = (chapterIndex: number, lessonIndex: number, updates: Partial<Lesson>) => {
+    if (!generatedCourse) return;
+    const newChapters = [...generatedCourse.chapters];
+    const newLessons = [...newChapters[chapterIndex].lessons];
+    newLessons[lessonIndex] = { ...newLessons[lessonIndex], ...updates };
+    newChapters[chapterIndex] = { ...newChapters[chapterIndex], lessons: newLessons };
+    setGeneratedCourse({ ...generatedCourse, chapters: newChapters });
+    setEditingLesson(null);
   };
 
   const getTotalLessons = (course: CourseData) =>
@@ -379,20 +512,28 @@ const AICourseGenerator = () => {
                 AI Course Architect
               </h1>
               <p className="text-[10px] text-muted-foreground font-medium mt-1">
-                Powered by Advanced LLM
+                {generatedCourse ? "Refine your course with AI" : "Powered by Advanced LLM"}
               </p>
             </div>
           </div>
-          {generatedCourse && !showPreview && (
-            <Button
-              onClick={() => setShowPreview(true)}
-              variant="outline"
-              size="sm"
-              className="h-9 text-xs gap-2 bg-white/50 border-white/40 hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40"
-            >
-              <Eye className="w-3.5 h-3.5" /> Open Draft
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {generatedCourse && (
+              <Badge variant="outline" className="gap-1 text-xs bg-indigo-50 border-indigo-200 text-indigo-700">
+                <MessageSquare className="w-3 h-3" />
+                Conversational Mode
+              </Badge>
+            )}
+            {generatedCourse && !showPreview && (
+              <Button
+                onClick={() => setShowPreview(true)}
+                variant="outline"
+                size="sm"
+                className="h-9 text-xs gap-2 bg-white/50 border-white/40 hover:bg-white/80 dark:bg-black/20 dark:hover:bg-black/40"
+              >
+                <Eye className="w-3.5 h-3.5" /> Open Draft
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Messages */}
@@ -415,7 +556,9 @@ const AICourseGenerator = () => {
                 className={cn(
                   "relative px-5 py-3.5 text-[15px] leading-relaxed shadow-sm max-w-[85%] w-fit break-words group",
                   message.type === "user"
-                    ? "bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-2xl rounded-tr-sm shadow-indigo-500/20"
+                    ? message.isRefinement
+                      ? "bg-gradient-to-br from-violet-600 to-purple-600 text-white rounded-2xl rounded-tr-sm shadow-purple-500/20"
+                      : "bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-2xl rounded-tr-sm shadow-indigo-500/20"
                     : message.type === "system"
                       ? "bg-amber-50/80 backdrop-blur-sm border border-amber-200/60 text-amber-900 rounded-xl rounded-tl-sm font-mono text-xs flex items-center gap-3 shadow-sm"
                       : "bg-white/80 dark:bg-zinc-900/90 backdrop-blur-md border border-white/40 dark:border-white/10 text-foreground rounded-2xl rounded-tl-sm shadow-sm"
@@ -427,6 +570,13 @@ const AICourseGenerator = () => {
                   ) : (
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
                   ))}
+
+                {message.isRefinement && message.type === "user" && (
+                  <div className="flex items-center gap-1 text-xs text-white/70 mb-1">
+                    <RefreshCw className="w-3 h-3" />
+                    Refinement request
+                  </div>
+                )}
 
                 <div className="whitespace-pre-wrap">{message.content}</div>
                 {message.type !== "system" && (
@@ -449,11 +599,14 @@ const AICourseGenerator = () => {
             </div>
           ))}
 
-          {isGenerating && (
+          {(isGenerating || isRefining) && (
             <div className="flex gap-4 w-full justify-start animate-in fade-in">
               <AIAvatar />
-              <div className="bg-white/80 dark:bg-zinc-900/90 backdrop-blur-md border border-white/40 px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm h-12 flex items-center">
+              <div className="bg-white/80 dark:bg-zinc-900/90 backdrop-blur-md border border-white/40 px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm h-12 flex items-center gap-3">
                 <AILoadingBubble />
+                <span className="text-sm text-muted-foreground">
+                  {isRefining ? "Refining course..." : "Generating course..."}
+                </span>
               </div>
             </div>
           )}
@@ -470,7 +623,12 @@ const AICourseGenerator = () => {
           >
             <div className="group relative">
               {/* Glow Effect Intense */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-full opacity-20 group-hover:opacity-60 transition duration-700 blur-md group-focus-within:opacity-100 group-focus-within:blur-lg"></div>
+              <div className={cn(
+                "absolute -inset-1 rounded-full opacity-20 group-hover:opacity-60 transition duration-700 blur-md group-focus-within:opacity-100 group-focus-within:blur-lg",
+                generatedCourse
+                  ? "bg-gradient-to-r from-violet-500 via-purple-500 to-pink-500"
+                  : "bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500"
+              )}></div>
 
               <div className="relative flex items-center bg-white/90 dark:bg-black/90 backdrop-blur-xl rounded-full p-2 ring-1 ring-white/50 dark:ring-white/10 shadow-xl">
                 <Input
@@ -480,26 +638,35 @@ const AICourseGenerator = () => {
                   onKeyDown={(e) =>
                     e.key === "Enter" &&
                     !isGenerating &&
+                    !isRefining &&
                     !isSaving &&
-                    handleGenerateCourse()
+                    handleSubmit()
                   }
-                  placeholder="Describe your dream course (e.g. 'Advanced React Patterns in 2024')..."
-                  disabled={isGenerating || isSaving}
+                  placeholder={
+                    generatedCourse
+                      ? "Ask for changes (e.g. 'Add more practical examples' or 'Make chapter 2 shorter')..."
+                      : "Describe your dream course (e.g. 'Advanced React Patterns in 2024')..."
+                  }
+                  disabled={isGenerating || isRefining || isSaving}
                   className="flex-1 border-0 focus-visible:ring-0 bg-transparent px-5 py-3 h-auto text-base shadow-none placeholder:text-muted-foreground/50"
                 />
                 <Button
-                  onClick={handleGenerateCourse}
-                  disabled={isGenerating || isSaving || !inputValue.trim()}
+                  onClick={handleSubmit}
+                  disabled={isGenerating || isRefining || isSaving || !inputValue.trim()}
                   size="icon"
                   className={cn(
                     "rounded-full w-11 h-11 shrink-0 transition-all duration-300 ml-2",
                     inputValue.trim()
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 scale-100"
+                      ? generatedCourse
+                        ? "bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/30 scale-100"
+                        : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 scale-100"
                       : "bg-muted text-muted-foreground scale-90"
                   )}
                 >
-                  {isGenerating ? (
+                  {isGenerating || isRefining ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : generatedCourse ? (
+                    <RefreshCw className="h-5 w-5" />
                   ) : (
                     <Send className="h-5 w-5 ml-0.5" />
                   )}
@@ -507,8 +674,8 @@ const AICourseGenerator = () => {
               </div>
             </div>
             <p className="text-center text-[11px] text-muted-foreground/70 mt-4 flex items-center justify-center gap-1.5 font-medium tracking-wide">
-              <Sparkles className="w-3 h-3 text-indigo-500" /> AI Architect by
-              LH Pro
+              <Sparkles className="w-3 h-3 text-indigo-500" />
+              {generatedCourse ? "Keep chatting to refine your course" : "AI Architect by LH Pro"}
             </p>
           </div>
         </div>
@@ -561,10 +728,20 @@ const AICourseGenerator = () => {
                     >
                       AI Generated
                     </Badge>
+                    <Badge
+                      variant="outline"
+                      className="text-white border-emerald-400/30 bg-emerald-500/20 backdrop-blur-md gap-1"
+                    >
+                      <Edit3 className="w-3 h-3" />
+                      Editable
+                    </Badge>
                   </div>
-                  <h2 className="text-3xl font-bold text-white leading-tight drop-shadow-md">
-                    {generatedCourse.title}
-                  </h2>
+                  <EditableField
+                    value={generatedCourse.title}
+                    onChange={(value) => updateCourseField("title", value)}
+                    label="Title"
+                    className="text-3xl font-bold text-white leading-tight drop-shadow-md"
+                  />
                 </div>
               </div>
 
@@ -611,6 +788,18 @@ const AICourseGenerator = () => {
                   </div>
                 </div>
 
+                {/* Description - Editable */}
+                <div className="space-y-2">
+                  <h3 className="font-bold text-sm text-muted-foreground uppercase tracking-wider">Description</h3>
+                  <EditableField
+                    value={generatedCourse.description}
+                    onChange={(value) => updateCourseField("description", value)}
+                    label="Description"
+                    multiline
+                    className="text-sm text-foreground/80"
+                  />
+                </div>
+
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-2xl p-6 border border-emerald-100/50 dark:border-emerald-900/50 shadow-sm">
                   <h3 className="font-bold flex items-center gap-2 mb-4 text-emerald-800 dark:text-emerald-400 text-lg">
                     <GraduationCap className="w-6 h-6" /> What you will master
@@ -633,6 +822,7 @@ const AICourseGenerator = () => {
                 <div className="space-y-4 pb-4">
                   <h3 className="font-bold flex items-center gap-2 text-lg">
                     <BookOpen className="w-6 h-6 text-indigo-600" /> Curriculum
+                    <span className="text-xs text-muted-foreground font-normal ml-2">(Click to edit)</span>
                   </h3>
                   <div className="flex flex-col gap-3">
                     {generatedCourse.chapters.map((chapter, idx) => (
@@ -648,9 +838,34 @@ const AICourseGenerator = () => {
                             <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-sm font-bold text-zinc-500 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                               {String(idx + 1).padStart(2, "0")}
                             </span>
-                            <span className="font-semibold text-base">
-                              {chapter.title}
-                            </span>
+                            {editingChapter === idx ? (
+                              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                <Input
+                                  defaultValue={chapter.title}
+                                  className="h-8 text-sm"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      updateChapterTitle(idx, (e.target as HTMLInputElement).value);
+                                    }
+                                    if (e.key === "Escape") {
+                                      setEditingChapter(null);
+                                    }
+                                  }}
+                                  onBlur={(e) => updateChapterTitle(idx, e.target.value)}
+                                />
+                              </div>
+                            ) : (
+                              <span
+                                className="font-semibold text-base hover:text-indigo-600 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingChapter(idx);
+                                }}
+                              >
+                                {chapter.title}
+                              </span>
+                            )}
                           </div>
                           {expandedChapters.has(idx) ? (
                             <ChevronDown className="w-5 h-5 text-muted-foreground" />
@@ -664,10 +879,29 @@ const AICourseGenerator = () => {
                               <div
                                 key={lIdx}
                                 className="py-3.5 px-6 pl-[4.5rem] flex items-center justify-between border-b last:border-0 border-border/40 hover:bg-white dark:hover:bg-zinc-900 transition-colors cursor-pointer group/lesson"
+                                onClick={() => setEditingLesson({ chapter: idx, lesson: lIdx })}
                               >
-                                <div className="flex items-center gap-3 text-sm text-foreground/80">
+                                <div className="flex items-center gap-3 text-sm text-foreground/80 flex-1">
                                   <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 group-hover/lesson:bg-indigo-500 transition-colors"></div>
-                                  <span>{lesson.title}</span>
+                                  {editingLesson?.chapter === idx && editingLesson?.lesson === lIdx ? (
+                                    <Input
+                                      defaultValue={lesson.title}
+                                      className="h-7 text-sm flex-1"
+                                      autoFocus
+                                      onClick={(e) => e.stopPropagation()}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                          updateLesson(idx, lIdx, { title: (e.target as HTMLInputElement).value });
+                                        }
+                                        if (e.key === "Escape") {
+                                          setEditingLesson(null);
+                                        }
+                                      }}
+                                      onBlur={(e) => updateLesson(idx, lIdx, { title: e.target.value })}
+                                    />
+                                  ) : (
+                                    <span className="group-hover/lesson:text-indigo-600 transition-colors">{lesson.title}</span>
+                                  )}
                                 </div>
                                 {lesson.duration && (
                                   <span className="text-xs text-muted-foreground font-medium bg-white dark:bg-zinc-800 px-2 py-1 rounded border border-border/50">

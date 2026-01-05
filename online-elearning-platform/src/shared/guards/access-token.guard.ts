@@ -78,6 +78,19 @@ const WHITELISTED_ROUTES = [
     path: '/quizzes/:quizId/duplicate',
     method: 'POST',
   },
+  // AI Course routes - for instructors/admins to generate and refine courses
+  {
+    path: '/ai/courses/generate',
+    method: 'POST',
+  },
+  {
+    path: '/ai/courses/refine',
+    method: 'POST',
+  },
+  {
+    path: '/ai/courses/save',
+    method: 'POST',
+  },
 ]
 
 @Injectable()

@@ -10,17 +10,37 @@ export class GenerateCourseDto {
   courseTopic: string
 }
 
+export class RefineCourseDto {
+  currentCourse: any
+  refinementPrompt: string
+}
+
 @Controller('ai/courses')
 export class AiCourseGeneratorController {
   private readonly logger = new Logger(AiCourseGeneratorController.name)
 
-  constructor(private aiCourseGeneratorService: AiCourseGeneratorService) {}
+  constructor(private aiCourseGeneratorService: AiCourseGeneratorService) { }
 
   @Post('generate')
   async generateCourse(@Body() dto: GenerateCourseDto) {
     this.logger.log(`Generating course for: ${dto.courseTopic}`)
 
     const result = await this.aiCourseGeneratorService.generateCourse(dto.courseTopic)
+
+    return {
+      success: true,
+      data: result,
+    }
+  }
+
+  @Post('refine')
+  async refineCourse(@Body() dto: RefineCourseDto) {
+    this.logger.log(`Refining course with prompt: ${dto.refinementPrompt}`)
+
+    const result = await this.aiCourseGeneratorService.refineCourse(
+      dto.currentCourse,
+      dto.refinementPrompt
+    )
 
     return {
       success: true,
