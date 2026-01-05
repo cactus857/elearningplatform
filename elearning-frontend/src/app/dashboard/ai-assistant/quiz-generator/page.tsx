@@ -366,7 +366,6 @@ const AIQuizGenerator = () => {
             </p>
           </div>
         </div>
-        <StepProgress current={step} />
         <div className="w-32 flex justify-end">
           <Button variant="ghost" size="icon" className="text-muted-foreground">
             <Settings className="w-4 h-4" />
@@ -830,6 +829,28 @@ const AIQuizGenerator = () => {
                   <h4 className="font-bold text-sm text-foreground mb-3 flex items-center gap-2">
                     <Layers className="w-4 h-4" /> Structure
                   </h4>
+
+                  {/* Question List */}
+                  <div className="space-y-1 mb-3 max-h-48 overflow-y-auto custom-scrollbar">
+                    {generatedQuiz.questions.map((q, idx) => (
+                      <div
+                        key={q.id}
+                        className={cn(
+                          "flex items-center gap-2 p-2 rounded-md text-xs cursor-pointer transition-colors",
+                          editingQuestionId === q.id
+                            ? "bg-primary/10 text-primary"
+                            : "hover:bg-muted/50 text-muted-foreground"
+                        )}
+                        onClick={() => setEditingQuestionId(q.id)}
+                      >
+                        <span className="w-5 h-5 rounded bg-muted flex items-center justify-center text-[10px] font-bold shrink-0">
+                          {idx + 1}
+                        </span>
+                        <span className="truncate flex-1">{q.text}</span>
+                      </div>
+                    ))}
+                  </div>
+
                   <Button
                     onClick={addNewQuestion}
                     variant="outline"
