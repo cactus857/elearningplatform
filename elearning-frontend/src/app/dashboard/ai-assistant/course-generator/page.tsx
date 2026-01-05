@@ -160,8 +160,8 @@ const AIAvatar = () => (
 );
 
 const UserAvatar = () => (
-  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/30 ring-2 ring-purple-100 z-10">
-    <User className="w-4 h-4 text-white" />
+  <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0 shadow-sm z-10">
+    <User className="w-4 h-4 text-muted-foreground" />
   </div>
 );
 
@@ -798,7 +798,7 @@ const AICourseGenerator = () => {
       <div
         className={cn(
           "flex flex-col relative z-10 transition-all duration-500 ease-in-out h-full",
-          showPreview ? "w-1/2" : "w-full"
+          showPreview ? "w-1/2" : "w-full max-w-4xl mx-auto"
         )}
       >
         {/* Header */}
@@ -854,7 +854,7 @@ const AICourseGenerator = () => {
                     Your previous course generation sessions
                   </SheetDescription>
                 </SheetHeader>
-                <div className="mt-6">
+                <div className="mt-6 px-1">
                   <Button
                     onClick={createNewSession}
                     className="w-full gap-2 mb-4"
@@ -863,7 +863,7 @@ const AICourseGenerator = () => {
                     Start New Chat
                   </Button>
                   <ScrollArea className="h-[calc(100vh-220px)]">
-                    <div className="space-y-2">
+                    <div className="space-y-2 pr-4">
                       {sessions.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground">
                           <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
