@@ -514,11 +514,16 @@ const AICourseGenerator = () => {
     const userInput = inputValue;
     setInputValue("");
 
-    // Ensure we have a session
-    if (!activeSessionId) {
+    // Determine session and messages to use
+    let sessionId = activeSessionId;
+    let currentMessages: Message[] = [];
+    let currentCourse: CourseData | null = null;
+
+    // If no active session, create one first
+    if (!sessionId) {
       const newSession: ChatSession = {
         id: generateSessionId(),
-        title: userInput.slice(0, 40),
+        title: userInput.slice(0, 40) + (userInput.length > 40 ? "..." : ""),
         messages: [
           {
             id: "1",
@@ -531,16 +536,20 @@ const AICourseGenerator = () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+      sessionId = newSession.id;
+      currentMessages = newSession.messages;
+      currentCourse = null;
+
       setSessions(prev => [newSession, ...prev]);
       setActiveSessionId(newSession.id);
-      // Wait for state to update
-      await new Promise(resolve => setTimeout(resolve, 100));
+    } else {
+      // Use existing session data
+      const existingSession = sessions.find(s => s.id === sessionId);
+      currentMessages = existingSession?.messages || messages;
+      currentCourse = existingSession?.generatedCourse || null;
     }
 
-    const currentMessages = activeSession?.messages || messages;
-    const currentCourse = activeSession?.generatedCourse || generatedCourse;
-
-    // Add user message
+    // Create user message
     const userMessage: Message = {
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       type: "user",
@@ -550,7 +559,19 @@ const AICourseGenerator = () => {
     };
 
     const updatedMessages = [...currentMessages, userMessage];
-    updateActiveSession({ messages: updatedMessages });
+
+    // Update session with user message immediately
+    setSessions(prev => prev.map(s => {
+      if (s.id === sessionId) {
+        return {
+          ...s,
+          messages: updatedMessages,
+          updatedAt: new Date(),
+          title: getSessionTitle(updatedMessages, s.generatedCourse),
+        };
+      }
+      return s;
+    }));
 
     // If we have a generated course, treat this as a refinement request
     if (currentCourse) {
@@ -567,10 +588,19 @@ const AICourseGenerator = () => {
             timestamp: new Date(),
             isRefinement: true,
           };
-          updateActiveSession({
-            messages: [...updatedMessages, assistantMessage],
-            generatedCourse: refinedCourse,
-          });
+
+          setSessions(prev => prev.map(s => {
+            if (s.id === sessionId) {
+              return {
+                ...s,
+                messages: [...updatedMessages, assistantMessage],
+                generatedCourse: refinedCourse,
+                updatedAt: new Date(),
+                title: refinedCourse.title,
+              };
+            }
+            return s;
+          }));
           toast.success("Course refined successfully");
         } else {
           throw new Error("Failed to refine course");
@@ -584,7 +614,17 @@ const AICourseGenerator = () => {
           content: `❌ ${errorMessage}. Please try again.`,
           timestamp: new Date(),
         };
-        updateActiveSession({ messages: [...updatedMessages, errorMsg] });
+
+        setSessions(prev => prev.map(s => {
+          if (s.id === sessionId) {
+            return {
+              ...s,
+              messages: [...updatedMessages, errorMsg],
+              updatedAt: new Date(),
+            };
+          }
+          return s;
+        }));
         toast.error(errorMessage);
       } finally {
         setIsRefining(false);
@@ -603,10 +643,19 @@ const AICourseGenerator = () => {
             content: `✅ Course Generated: "${courseData.title}".\nIt includes ${courseData.chapters.length} chapters and ${courseData.chapters.reduce((acc, ch) => acc + ch.lessons.length, 0)} lessons.\n\n💡 You can now:\n• Click "Preview" to see the details\n• Type feedback to refine the course (e.g. "Add more advanced topics" or "Make it shorter")\n• Edit directly in the preview panel`,
             timestamp: new Date(),
           };
-          updateActiveSession({
-            messages: [...updatedMessages, assistantMessage],
-            generatedCourse: courseData,
-          });
+
+          setSessions(prev => prev.map(s => {
+            if (s.id === sessionId) {
+              return {
+                ...s,
+                messages: [...updatedMessages, assistantMessage],
+                generatedCourse: courseData,
+                updatedAt: new Date(),
+                title: courseData.title,
+              };
+            }
+            return s;
+          }));
           toast.success("Course generated successfully");
         } else {
           throw new Error("Failed to generate course");
@@ -620,7 +669,17 @@ const AICourseGenerator = () => {
           content: `❌ ${errorMessage}. Please try again.`,
           timestamp: new Date(),
         };
-        updateActiveSession({ messages: [...updatedMessages, errorMsg] });
+
+        setSessions(prev => prev.map(s => {
+          if (s.id === sessionId) {
+            return {
+              ...s,
+              messages: [...updatedMessages, errorMsg],
+              updatedAt: new Date(),
+            };
+          }
+          return s;
+        }));
         toast.error(errorMessage);
       } finally {
         setIsGenerating(false);
