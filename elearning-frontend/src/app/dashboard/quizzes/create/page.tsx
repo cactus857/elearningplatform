@@ -360,10 +360,10 @@ export default function CreateQuizPage() {
                                 <SelectValue placeholder="Select Course" className="truncate" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent className="max-w-[350px]">
                               {courses.map((course) => (
-                                <SelectItem key={course.id} value={course.id} className="max-w-[400px]">
-                                  <span className="truncate block" title={course.title}>{course.title}</span>
+                                <SelectItem key={course.id} value={course.id}>
+                                  <span className="truncate block max-w-[300px]" title={course.title}>{course.title}</span>
                                 </SelectItem>
                               ))}
                             </SelectContent>
