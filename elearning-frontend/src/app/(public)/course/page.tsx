@@ -418,7 +418,7 @@ export default function CoursesPage() {
           _highlight: course.highlight, // Keep highlight for potential use
         }));
 
-        let filteredData = applySorting(mappedData as any, sortBy);
+        const filteredData = applySorting(mappedData as any, sortBy);
         setData(filteredData);
         setTotalItems(esResponse.totalItems);
       } else {
