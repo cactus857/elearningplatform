@@ -431,16 +431,13 @@ export default function CoursesPage() {
           undefined
         );
 
-        let filteredData = response.data;
-        if (selectedCategory !== "all") {
-          filteredData = filteredData.filter(
-            (course) => course.category === selectedCategory
-          );
-        }
+        const categoryFiltered = selectedCategory !== "all"
+          ? response.data.filter((course) => course.category === selectedCategory)
+          : response.data;
 
-        filteredData = applySorting(filteredData, sortBy);
+        const sortedData = applySorting(categoryFiltered, sortBy);
 
-        setData(filteredData);
+        setData(sortedData);
         setTotalItems(response.totalItems);
       }
     } catch (error) {
