@@ -10,7 +10,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       process.env.FRONTEND_URL || 'http://localhost:3300',
-      'http://localhost:3300', // Local development
+      'http://localhost:3300', 'https://elearningplatform.vercel.app' // Local development
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
