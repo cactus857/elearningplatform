@@ -27,6 +27,8 @@ import {
     BarChart2,
     ChevronDown,
     ChevronUp,
+    Copy,
+    Check,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,14 +56,25 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
     getQuizById,
     deleteQuiz,
+    duplicateQuizToCourses,
     type IQuizDetail,
 } from "@/services/quiz.service";
+import { getAllCoursesBaseRole, type ICourseRes } from "@/services/course.service";
 import { useAuth } from "@/hooks/use-auth";
 import { quizToCSV, downloadCSV, type QuizQuestion } from "@/utils/quiz-csv";
 
@@ -186,6 +199,13 @@ export default function QuizDetailPage() {
         new Set([0])
     );
 
+    // Repost state
+    const [repostDialogOpen, setRepostDialogOpen] = useState(false);
+    const [availableCourses, setAvailableCourses] = useState<ICourseRes[]>([]);
+    const [selectedCourseIds, setSelectedCourseIds] = useState<Set<string>>(new Set());
+    const [isReposting, setIsReposting] = useState(false);
+    const [loadingCourses, setLoadingCourses] = useState(false);
+
     useEffect(() => {
         const fetchQuiz = async () => {
             try {
@@ -227,6 +247,57 @@ export default function QuizDetailPage() {
             }
             return newSet;
         });
+    };
+
+    // Repost handlers
+    const openRepostDialog = async () => {
+        if (!quiz) return;
+        setSelectedCourseIds(new Set());
+        setRepostDialogOpen(true);
+        setLoadingCourses(true);
+
+        try {
+            const response = await getAllCoursesBaseRole(1, 100);
+            const otherCourses = response.data.filter((c) => c.id !== quiz.courseId);
+            setAvailableCourses(otherCourses);
+        } catch (error) {
+            console.error("Error loading courses:", error);
+            toast.error("Failed to load courses");
+        } finally {
+            setLoadingCourses(false);
+        }
+    };
+
+    const toggleCourseSelection = (courseId: string) => {
+        setSelectedCourseIds((prev) => {
+            const newSet = new Set(prev);
+            if (newSet.has(courseId)) {
+                newSet.delete(courseId);
+            } else {
+                newSet.add(courseId);
+            }
+            return newSet;
+        });
+    };
+
+    const handleRepostQuiz = async () => {
+        if (!quiz || selectedCourseIds.size === 0) return;
+
+        setIsReposting(true);
+        try {
+            const result = await duplicateQuizToCourses(
+                quizId,
+                Array.from(selectedCourseIds)
+            );
+            toast.success(result.message);
+            setRepostDialogOpen(false);
+            setSelectedCourseIds(new Set());
+        } catch (error) {
+            console.error("Error reposting quiz:", error);
+            toast.error("Failed to repost quiz");
+        } finally {
+            setIsReposting(false);
+        }
     };
 
     const expandAll = () => {
@@ -369,6 +440,10 @@ export default function QuizDetailPage() {
                             >
                                 <Download className="mr-2 h-4 w-4" />
                                 Export CSV
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={openRepostDialog}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                Repost to Courses
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -704,6 +779,113 @@ export default function QuizDetailPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Repost Dialog */}
+            <Dialog open={repostDialogOpen} onOpenChange={setRepostDialogOpen}>
+                <DialogContent className="sm:max-w-[500px] rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Copy className="h-5 w-5 text-primary" />
+                            Repost Quiz to Courses
+                        </DialogTitle>
+                        <DialogDescription>
+                            Duplicate &quot;{quiz?.title}&quot; to selected courses. The quiz
+                            will be copied with all questions.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="py-4">
+                        <p className="text-sm font-medium mb-3">Select target courses:</p>
+
+                        {loadingCourses ? (
+                            <div className="space-y-2">
+                                {[1, 2, 3].map((i) => (
+                                    <Skeleton key={i} className="h-12 w-full rounded-lg" />
+                                ))}
+                            </div>
+                        ) : availableCourses.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                                <p>No other courses available.</p>
+                            </div>
+                        ) : (
+                            <ScrollArea className="h-[300px] pr-4">
+                                <div className="space-y-2">
+                                    {availableCourses.map((course) => (
+                                        <div
+                                            key={course.id}
+                                            onClick={() => toggleCourseSelection(course.id)}
+                                            className={cn(
+                                                "flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all",
+                                                selectedCourseIds.has(course.id)
+                                                    ? "border-primary bg-primary/5"
+                                                    : "border-border hover:border-primary/50 hover:bg-muted/50"
+                                            )}
+                                        >
+                                            <div className={cn(
+                                                "h-5 w-5 rounded-md border-2 flex items-center justify-center mt-0.5 transition-colors",
+                                                selectedCourseIds.has(course.id)
+                                                    ? "bg-primary border-primary text-primary-foreground"
+                                                    : "border-muted-foreground/30"
+                                            )}>
+                                                {selectedCourseIds.has(course.id) && (
+                                                    <Check className="h-3 w-3" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-sm line-clamp-1">
+                                                    {course.title}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    By {course.instructor?.fullName || "Unknown"}
+                                                </p>
+                                            </div>
+                                            <Badge variant="outline" className="text-xs shrink-0">
+                                                {course.level}
+                                            </Badge>
+                                        </div>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                        )}
+
+                        {selectedCourseIds.size > 0 && (
+                            <p className="text-sm text-muted-foreground mt-3">
+                                Selected: <span className="font-medium text-foreground">{selectedCourseIds.size}</span> course(s)
+                            </p>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setRepostDialogOpen(false);
+                                setSelectedCourseIds(new Set());
+                            }}
+                            className="rounded-xl"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleRepostQuiz}
+                            disabled={selectedCourseIds.size === 0 || isReposting}
+                            className="rounded-xl"
+                        >
+                            {isReposting ? (
+                                <>
+                                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                    Reposting...
+                                </>
+                            ) : (
+                                <>
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    Repost to {selectedCourseIds.size} Course(s)
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

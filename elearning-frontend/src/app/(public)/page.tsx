@@ -27,15 +27,6 @@ const features = [
     hoverBg: "group-hover:bg-blue-500",
   },
   {
-    title: "Expert Instructors",
-    description:
-      "Learn directly from industry professionals and thought leaders.",
-    icon: <Users className="h-6 w-6" />,
-    color: "text-purple-500",
-    bg: "bg-purple-500/10",
-    hoverBg: "group-hover:bg-purple-500",
-  },
-  {
     title: "Progress Tracking",
     description: "Visualize your growth with advanced analytics and insights.",
     icon: <BarChart2 className="h-6 w-6" />,
@@ -44,10 +35,19 @@ const features = [
     hoverBg: "group-hover:bg-emerald-500",
   },
   {
-    title: "Community Support",
+    title: "Interactive Quizzes",
     description:
-      "Connect with peers and mentors in a collaborative environment.",
-    icon: <MessageCircle className="h-6 w-6" />,
+      "Test your knowledge with engaging quizzes after each lesson.",
+    icon: <Zap className="h-6 w-6" />,
+    color: "text-purple-500",
+    bg: "bg-purple-500/10",
+    hoverBg: "group-hover:bg-purple-500",
+  },
+  {
+    title: "Learn Anywhere",
+    description:
+      "Access courses on any device, anytime. Continue where you left off.",
+    icon: <PlayCircle className="h-6 w-6" />,
     color: "text-orange-500",
     bg: "bg-orange-500/10",
     hoverBg: "group-hover:bg-orange-500",
@@ -64,14 +64,10 @@ export default function Home() {
         <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-purple-500/10 blur-[100px] rounded-full -z-10"></div>
 
         <div className="container mx-auto px-4 md:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-sm font-medium mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <Sparkles className="h-4 w-4" />
-            <span>AI-Powered Learning Platform</span>
-          </div>
 
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 leading-tight">
             Master Skills Faster with <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-pink-500 animate-gradient-x">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 animate-gradient-x">
               Intelligent Learning
             </span>
           </h1>
@@ -84,7 +80,7 @@ export default function Home() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
-              href="/courses"
+              href="/course"
               className={buttonVariants({
                 size: "lg",
                 className:

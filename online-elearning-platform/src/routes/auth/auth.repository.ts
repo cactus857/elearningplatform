@@ -9,10 +9,10 @@ import { RoleType } from 'src/shared/models/shared-role.model'
 
 @Injectable()
 export class AuthRepository {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(private readonly prismaService: PrismaService) { }
 
   async createUser(
-    user: Omit<RegisterBodyType, 'confirmPassword' | 'code'> & Pick<UserType, 'roleId'>,
+    user: Omit<RegisterBodyType, 'confirmPassword' | 'code'> & Pick<UserType, 'roleId'> & Partial<Pick<UserType, 'status'>>,
   ): Promise<Omit<UserType, 'password' | 'totpSecret'>> {
     return await this.prismaService.user.create({
       data: {
@@ -27,7 +27,7 @@ export class AuthRepository {
   }
 
   async createUserIncludeRole(
-    user: Omit<RegisterBodyType, 'confirmPassword' | 'code'> & Pick<UserType, 'roleId' | 'avatar'>,
+    user: Omit<RegisterBodyType, 'confirmPassword' | 'code'> & Pick<UserType, 'roleId' | 'avatar'> & Partial<Pick<UserType, 'status'>>,
   ): Promise<UserType & { role: RoleType }> {
     return await this.prismaService.user.create({
       data: {
@@ -62,11 +62,11 @@ export class AuthRepository {
     uniqueValue:
       | { id: string }
       | {
-          email_type: {
-            email: string
-            type: TypeOfVerificationCodeType
-          }
-        },
+        email_type: {
+          email: string
+          type: TypeOfVerificationCodeType
+        }
+      },
   ): Promise<VerificationCodeType | null> {
     return await this.prismaService.verificationCode.findUnique({
       where: uniqueValue,
@@ -137,11 +137,11 @@ export class AuthRepository {
     uniqueValue:
       | { id: string }
       | {
-          email_type: {
-            email: string
-            type: TypeOfVerificationCodeType
-          }
-        },
+        email_type: {
+          email: string
+          type: TypeOfVerificationCodeType
+        }
+      },
   ): Promise<VerificationCodeType> {
     return this.prismaService.verificationCode.delete({
       where: uniqueValue,

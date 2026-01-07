@@ -117,10 +117,7 @@ export default function QuizListPage() {
             </div>
 
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
-              Khám phá{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/60">
-                kiến thức
-              </span>
+              Khám phá kiến thức
             </h1>
 
             <p className="text-lg text-muted-foreground leading-relaxed">

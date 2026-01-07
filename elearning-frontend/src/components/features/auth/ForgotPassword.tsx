@@ -297,7 +297,7 @@ export default function ForgotPasswordPage() {
             <p className="mt-4 text-lg opacity-80">
               Follow the steps to securely reset your password and regain access
               to your learning journey on{" "}
-              <span className="font-bold">Ucademy</span>.
+              <span className="font-bold">KinnLMS</span>.
             </p>
             <div className="mt-10">
               <Image

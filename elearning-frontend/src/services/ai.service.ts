@@ -55,6 +55,17 @@ export const aiSaveCourse = async (
   return response.data;
 };
 
+export const aiRefineCourse = async (
+  currentCourse: IAICourseOutline,
+  refinementPrompt: string
+): Promise<{ success: boolean; data: IAICourseOutline }> => {
+  const response = await api.post<{ success: boolean; data: IAICourseOutline }>(
+    API_ENDPOINT.AI_COURSE + "/refine",
+    { currentCourse, refinementPrompt }
+  );
+  return response.data;
+};
+
 // ==================== AI GENERATE QUIZ ====================
 
 export type QuizDifficulty = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";

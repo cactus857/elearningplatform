@@ -154,7 +154,7 @@ export default function RegisterPage() {
                 <div className="mb-8">
                   {/* <Image
                     src="/logo.svg"
-                    alt="Ucademy Logo"
+                    alt="KinnLMS Logo"
                     width={40}
                     height={40}
                   /> */}
@@ -366,7 +366,7 @@ export default function RegisterPage() {
           <div className="max-w-md">
             <h1 className="text-4xl font-bold leading-tight">
               Start Your Learning Journey with{" "}
-              <span className="underline">Ucademy</span>
+              <span className="underline">KinnLMS</span>
             </h1>
             <p className="mt-4 text-lg opacity-80">
               Join thousands of learners and gain new skills in coding, AI, and

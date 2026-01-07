@@ -32,6 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 import { getAllCourses, type ICourseRes } from "@/services/course.service";
+import { searchCourses } from "@/services/search.service";
 import { toast } from "sonner";
 import { getInitials } from "@/utils/get-initial";
 import { useDebounce } from "use-debounce";
@@ -386,25 +387,62 @@ export default function CoursesPage() {
   const fetchCourses = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await getAllCourses(
-        pagination.pageIndex + 1,
-        pagination.pageSize,
-        "PUBLISHED",
-        selectedLevel !== "all" ? selectedLevel : undefined,
-        debouncedSearchQuery || undefined
-      );
+      // Use Elasticsearch for search queries (better full-text search with fuzzy matching)
+      if (debouncedSearchQuery) {
+        const esResponse = await searchCourses({
+          keyword: debouncedSearchQuery,
+          level: selectedLevel !== "all" ? selectedLevel : undefined,
+          category: selectedCategory !== "all" ? selectedCategory : undefined,
+          status: "PUBLISHED",
+          page: pagination.pageIndex + 1,
+          limit: pagination.pageSize,
+        });
 
-      let filteredData = response.data;
-      if (selectedCategory !== "all") {
-        filteredData = filteredData.filter(
-          (course) => course.category === selectedCategory
+        // Map Elasticsearch results to match ICourseRes format
+        const mappedData = esResponse.data.map((course) => ({
+          id: course.id,
+          title: course.title,
+          slug: course.slug,
+          description: course.description,
+          smallDescription: course.smallDescription,
+          thumbnail: course.thumbnail,
+          level: course.level as any,
+          category: course.category,
+          status: course.status as any,
+          createdAt: course.createdAt,
+          instructor: course.instructor,
+          _count: {
+            chapters: 0,
+            enrollments: course.enrollmentCount || 0,
+          },
+          _highlight: course.highlight, // Keep highlight for potential use
+        }));
+
+        let filteredData = applySorting(mappedData as any, sortBy);
+        setData(filteredData);
+        setTotalItems(esResponse.totalItems);
+      } else {
+        // Use regular API for browsing without search
+        const response = await getAllCourses(
+          pagination.pageIndex + 1,
+          pagination.pageSize,
+          "PUBLISHED",
+          selectedLevel !== "all" ? selectedLevel : undefined,
+          undefined
         );
+
+        let filteredData = response.data;
+        if (selectedCategory !== "all") {
+          filteredData = filteredData.filter(
+            (course) => course.category === selectedCategory
+          );
+        }
+
+        filteredData = applySorting(filteredData, sortBy);
+
+        setData(filteredData);
+        setTotalItems(response.totalItems);
       }
-
-      filteredData = applySorting(filteredData, sortBy);
-
-      setData(filteredData);
-      setTotalItems(response.totalItems);
     } catch (error) {
       console.error("Error fetching courses:", error);
       toast.error("Failed to load courses");

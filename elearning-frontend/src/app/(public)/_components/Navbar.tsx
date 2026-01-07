@@ -41,15 +41,17 @@ export function Navbar() {
         {/* Desktop navigation */}
         <nav className="hidden md:flex md:flex-1 md:items-center md:justify-between">
           <div className="flex items-center space-x-2">
-            {navigationItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-sm font-medium transition-colors hover:text-primary"
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navigationItems
+              .filter((item) => item.name !== "Dashboard" || user)
+              .map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="text-sm font-medium transition-colors hover:text-primary"
+                >
+                  {item.name}
+                </Link>
+              ))}
           </div>
 
           <div className="flex items-center space-x-4">

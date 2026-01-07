@@ -252,7 +252,7 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
           <div className="lg:col-span-1 relative">
             <div className="sticky top-24 space-y-6">
               {/* Floating Course Card */}
-              <Card className="overflow-hidden border-0 shadow-2xl ring-1 ring-slate-200 dark:ring-slate-800 -mt-0 lg:-mt-32 relative z-20 bg-background rounded-2xl">
+              <Card className="overflow-hidden border-0 shadow-2xl ring-1 ring-slate-200 dark:ring-slate-800 -mt-0 lg:-mt-32 relative z-20 bg-background rounded-2xl p-0 gap-0">
                 {/* Thumbnail */}
                 <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-900 group overflow-hidden">
                   {course.thumbnail ? (
@@ -267,12 +267,6 @@ export default async function CourseDetailPage({ params }: { params: Params }) {
                       <FileText className="w-12 h-12" />
                     </div>
                   )}
-                  {/* Play Overlay */}
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                    <div className="bg-white/20 backdrop-blur-md p-3 rounded-full border border-white/30 text-white shadow-lg">
-                      <PlayCircle className="w-8 h-8 fill-current" />
-                    </div>
-                  </div>
                 </div>
 
                 <CardContent className="p-6">

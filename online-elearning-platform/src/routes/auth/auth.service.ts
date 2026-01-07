@@ -51,7 +51,7 @@ export class AuthService {
     private readonly tokenService: TokenService,
     private readonly twoFactorService: TwoFactorAuthService,
     private readonly redisService: RedisService,
-  ) {}
+  ) { }
 
   async validateVerificationCode({
     email,
@@ -189,6 +189,7 @@ export class AuthService {
           phoneNumber: body.phoneNumber,
           password: hashedPassword,
           roleId: clientRoleId,
+          status: 'ACTIVE', // User verified email via OTP, so set status to ACTIVE
         }),
         this.authRepository.deleteVerificationCode({
           email_type: {
@@ -299,7 +300,7 @@ export class AuthService {
     try {
       // kiem tra refresh token co hop le khong
       await this.tokenService.verifyRefreshToken(refreshToken)
-      
+
       // them access token vao blacklist
       await this.redisService.addToBlacklist(accessToken)
 

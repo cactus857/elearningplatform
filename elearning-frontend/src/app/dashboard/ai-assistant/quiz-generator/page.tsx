@@ -113,9 +113,26 @@ const DifficultyBadge = ({
 };
 
 const BackgroundPattern = () => (
-  <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]">
-    <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/20 opacity-20 blur-[100px]"></div>
-  </div>
+  <>
+    <style jsx global>{`
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+      .animate-float {
+        animation: float 3s ease-in-out infinite;
+      }
+      .animate-float-delayed {
+        animation: float 4s ease-in-out infinite 1s;
+      }
+      .animate-float-slow {
+        animation: float 5s ease-in-out infinite 0.5s;
+      }
+    `}</style>
+    <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]">
+      <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/20 opacity-20 blur-[100px]"></div>
+    </div>
+  </>
 );
 
 const StepProgress = ({ current }: { current: string }) => {
@@ -365,12 +382,6 @@ const AIQuizGenerator = () => {
               AI-Powered Assessment
             </p>
           </div>
-        </div>
-        <StepProgress current={step} />
-        <div className="w-32 flex justify-end">
-          <Button variant="ghost" size="icon" className="text-muted-foreground">
-            <Settings className="w-4 h-4" />
-          </Button>
         </div>
       </div>
 
@@ -650,13 +661,13 @@ const AIQuizGenerator = () => {
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-primary/10 rounded-full animate-[spin_40s_linear_infinite_reverse] pointer-events-none" />
 
               <div className="relative z-10 w-full max-w-2xl animate-in fade-in zoom-in-95 duration-700">
-                <div className="absolute -top-10 -left-10 p-3 bg-card rounded-xl border border-border shadow-lg animate-bounce duration-[3000ms]">
+                <div className="absolute -top-10 -left-10 p-3 bg-card rounded-xl border border-border shadow-lg animate-float z-20">
                   <Brain className="w-6 h-6 text-purple-500" />
                 </div>
-                <div className="absolute -bottom-5 -right-5 p-3 bg-card rounded-xl border border-border shadow-lg animate-bounce duration-[4000ms]">
+                <div className="absolute -bottom-5 -right-5 p-3 bg-card rounded-xl border border-border shadow-lg animate-float-delayed z-20">
                   <Code2 className="w-6 h-6 text-blue-500" />
                 </div>
-                <div className="absolute top-20 -right-12 p-2 bg-card rounded-lg border border-border shadow-sm animate-pulse">
+                <div className="absolute top-20 -right-12 p-2 bg-card rounded-lg border border-border shadow-sm animate-float-slow z-20">
                   <Database className="w-4 h-4 text-emerald-500" />
                 </div>
 
@@ -724,10 +735,15 @@ const AIQuizGenerator = () => {
                       </div>
                     </div>
 
-                    {/* FIX: Dark Terminal background for both modes */}
-                    <div className="mt-6 p-4 bg-zinc-950 rounded-lg text-left border border-zinc-800 shadow-inner">
+                    {/* Processing Log - Theme aware */}
+                    <div className="mt-6 p-4 bg-muted/50 dark:bg-zinc-900/50 rounded-lg text-left border border-border shadow-inner">
                       <ProcessingLog />
                     </div>
+
+                    {/* Warning about question validation */}
+                    <p className="mt-4 text-[11px] text-muted-foreground/70 text-center italic">
+                      ⚠️ Note: Final question count may differ from parameters due to quality validation.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -830,6 +846,28 @@ const AIQuizGenerator = () => {
                   <h4 className="font-bold text-sm text-foreground mb-3 flex items-center gap-2">
                     <Layers className="w-4 h-4" /> Structure
                   </h4>
+
+                  {/* Question List */}
+                  <div className="space-y-1 mb-3 max-h-48 overflow-y-auto custom-scrollbar">
+                    {generatedQuiz.questions.map((q, idx) => (
+                      <div
+                        key={q.id}
+                        className={cn(
+                          "flex items-center gap-2 p-2 rounded-md text-xs cursor-pointer transition-colors",
+                          editingQuestionId === q.id
+                            ? "bg-primary/10 text-primary"
+                            : "hover:bg-muted/50 text-muted-foreground"
+                        )}
+                        onClick={() => setEditingQuestionId(q.id)}
+                      >
+                        <span className="w-5 h-5 rounded bg-muted flex items-center justify-center text-[10px] font-bold shrink-0">
+                          {idx + 1}
+                        </span>
+                        <span className="truncate flex-1">{q.text}</span>
+                      </div>
+                    ))}
+                  </div>
+
                   <Button
                     onClick={addNewQuestion}
                     variant="outline"

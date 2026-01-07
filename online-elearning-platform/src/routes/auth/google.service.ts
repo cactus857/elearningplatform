@@ -88,6 +88,7 @@ export class GoogleService {
           phoneNumber: '',
           roleId: clientRoleId,
           avatar: data.picture ?? null,
+          status: 'ACTIVE', // Google verified email, so set status to ACTIVE
         })
       }
       const device = await this.authRepository.createDevice({

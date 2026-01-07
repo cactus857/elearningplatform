@@ -35,6 +35,7 @@ import {
   ICourse,
   ICourseRes,
 } from "@/services/course.service";
+import { searchCourses } from "@/services/search.service";
 import { getErrorMessage } from "@/utils/error-message";
 import {
   BookOpen,
@@ -152,15 +153,52 @@ export default function CoursesPage() {
     setIsLoading(true);
     try {
       const statusParam = statusTab !== "all" ? statusTab : undefined;
-      const response = await getAllCoursesBaseRole(
-        pagination.pageIndex + 1,
-        pagination.pageSize,
-        levelFilter !== "all" ? levelFilter : undefined,
-        statusParam,
-        debouncedSearchQuery || undefined
-      );
-      setData(response.data);
-      setTotalItems(response.totalItems);
+
+      // Use Elasticsearch for search queries (better fuzzy matching)
+      if (debouncedSearchQuery) {
+        const esResponse = await searchCourses({
+          keyword: debouncedSearchQuery,
+          level: levelFilter !== "all" ? levelFilter : undefined,
+          status: statusParam,
+          page: pagination.pageIndex + 1,
+          limit: pagination.pageSize,
+        });
+
+        // Map Elasticsearch results to match ICourseRes format
+        const mappedData = esResponse.data.map((course) => ({
+          id: course.id,
+          title: course.title,
+          slug: course.slug,
+          description: course.description,
+          smallDescription: course.smallDescription,
+          thumbnail: course.thumbnail,
+          level: course.level as any,
+          category: course.category,
+          status: course.status as any,
+          createdAt: course.createdAt,
+          instructorId: course.instructor.id,
+          updatedAt: course.createdAt,
+          instructor: course.instructor,
+          _count: {
+            chapters: 0,
+            enrollments: course.enrollmentCount || 0,
+          },
+        })) as ICourseRes[];
+
+        setData(mappedData);
+        setTotalItems(esResponse.totalItems);
+      } else {
+        // Use regular API for browsing without search
+        const response = await getAllCoursesBaseRole(
+          pagination.pageIndex + 1,
+          pagination.pageSize,
+          levelFilter !== "all" ? levelFilter : undefined,
+          statusParam,
+          undefined
+        );
+        setData(response.data);
+        setTotalItems(response.totalItems);
+      }
     } catch (error) {
       toast.error(getErrorMessage(error));
       setData([]);

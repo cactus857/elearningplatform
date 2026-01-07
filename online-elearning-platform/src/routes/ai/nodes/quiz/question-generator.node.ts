@@ -45,7 +45,8 @@ export class QuestionGeneratorNode {
 
             Guidelines:
             - Questions should be clear, concise, and unambiguous
-            - Each question should have 4 answer options (A, B, C, D)
+            - Each question should have exactly 4 answer options
+            - IMPORTANT: Do NOT include letter prefixes like "A)", "B)", "C)", "D)" in the options. Just provide the option text directly.
             - Only ONE option should be correct
             - Distractors (wrong answers) should be plausible but clearly incorrect
             - Test understanding and application, not just memorization

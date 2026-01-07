@@ -300,3 +300,21 @@ export const getAttemptDetail = async (
   );
   return response.data;
 };
+
+/**
+ * Duplicate a quiz to multiple courses (repost feature)
+ */
+export const duplicateQuizToCourses = async (
+  quizId: string,
+  courseIds: string[]
+): Promise<{
+  message: string;
+  createdCount: number;
+  quizzes: IQuiz[];
+}> => {
+  const response = await api.post(
+    `${API_ENDPOINT.QUIZZES}/${quizId}/duplicate`,
+    { courseIds }
+  );
+  return response.data;
+};

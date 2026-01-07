@@ -26,4 +26,6 @@ export const API_ENDPOINT = {
   AI_COURSE: "/ai/courses",
   AI_QUIZ: "/ai/quizzes",
   DASHBOARD: "/dashboard/admin",
+  LESSON_PROGRESS: "/lesson-progress",
+  SEARCH: "/search",
 } as const;
