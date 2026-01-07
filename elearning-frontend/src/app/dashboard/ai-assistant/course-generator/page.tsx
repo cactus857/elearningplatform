@@ -319,43 +319,16 @@ const AICourseGenerator = () => {
   const { user } = useAuth();
 
   // --- STATE ---
-  const getStorageKey = (suffix: string) => {
-    const userId = user?.id || "guest";
-    return `ai_course_${userId}_${suffix}`;
+  // Storage key function that includes user ID for isolation
+  const getStorageKey = (suffix: string, userId?: string) => {
+    const id = userId || user?.id || "guest";
+    return `ai_course_${id}_${suffix}`;
   };
 
-  // Load all sessions from localStorage
-  const [sessions, setSessions] = useState<ChatSession[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(getStorageKey("sessions"));
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          // Properly convert date strings back to Date objects
-          return parsed.map((session: any) => ({
-            ...session,
-            createdAt: new Date(session.createdAt),
-            updatedAt: new Date(session.updatedAt),
-            messages: session.messages.map((msg: any) => ({
-              ...msg,
-              timestamp: new Date(msg.timestamp),
-            })),
-          }));
-        } catch (e) {
-          console.error("Error loading sessions:", e);
-        }
-      }
-    }
-    return [];
-  });
-
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(getStorageKey("activeSession"));
-      return saved || null;
-    }
-    return null;
-  });
+  // Initialize with empty array - will be loaded via useEffect when user is available
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const [inputValue, setInputValue] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -384,17 +357,62 @@ const AICourseGenerator = () => {
   const generatedCourse = activeSession?.generatedCourse || null;
 
   // --- EFFECTS ---
-  useEffect(() => {
-    localStorage.setItem(getStorageKey("sessions"), JSON.stringify(sessions));
-  }, [sessions, user?.id]);
 
+  // Load sessions when user.id changes (critical for user isolation)
   useEffect(() => {
-    if (activeSessionId) {
-      localStorage.setItem(getStorageKey("activeSession"), activeSessionId);
-    } else {
-      localStorage.removeItem(getStorageKey("activeSession"));
+    if (typeof window === "undefined") return;
+
+    // Always load based on current user (or guest if not logged in)
+    const userId = user?.id || "guest";
+    const storageKey = getStorageKey("sessions", userId);
+    const activeKey = getStorageKey("activeSession", userId);
+
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const loadedSessions = parsed.map((session: any) => ({
+          ...session,
+          createdAt: new Date(session.createdAt),
+          updatedAt: new Date(session.updatedAt),
+          messages: session.messages.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp),
+          })),
+        }));
+        setSessions(loadedSessions);
+      } else {
+        setSessions([]);
+      }
+
+      const savedActiveSession = localStorage.getItem(activeKey);
+      setActiveSessionId(savedActiveSession || null);
+    } catch (e) {
+      console.error("Error loading sessions:", e);
+      setSessions([]);
+      setActiveSessionId(null);
     }
-  }, [activeSessionId, user?.id]);
+
+    setIsLoaded(true);
+  }, [user?.id]); // Re-run when user changes
+
+  // Save sessions to localStorage (only after initial load to prevent overwriting)
+  useEffect(() => {
+    if (!isLoaded) return;
+    const userId = user?.id || "guest";
+    localStorage.setItem(getStorageKey("sessions", userId), JSON.stringify(sessions));
+  }, [sessions, user?.id, isLoaded]);
+
+  // Save active session ID
+  useEffect(() => {
+    if (!isLoaded) return;
+    const userId = user?.id || "guest";
+    if (activeSessionId) {
+      localStorage.setItem(getStorageKey("activeSession", userId), activeSessionId);
+    } else {
+      localStorage.removeItem(getStorageKey("activeSession", userId));
+    }
+  }, [activeSessionId, user?.id, isLoaded]);
 
   useEffect(() => {
     if (scrollRef.current) {
