@@ -34,7 +34,7 @@ import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import {
-  getAllCourses,
+  getAllCoursesBaseRole,
   getCourseById,
   ICourseDetailRes,
   ICourseRes,
@@ -116,7 +116,7 @@ export default function CreateQuizPage() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await getAllCourses(1, 100);
+        const response = await getAllCoursesBaseRole(1, 100);
         setCourses(response.data);
       } catch (error) {
         console.error("Error fetching courses:", error);

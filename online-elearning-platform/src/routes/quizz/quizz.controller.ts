@@ -84,7 +84,7 @@ export class QuizController {
   }
 
   @Get(':quizId')
-  @ZodSerializerDto(GetQuizDetailResDTO)
+  // Note: Response schema varies based on user role (Student gets GetQuizForStudentResSchema, Admin/Instructor gets GetQuizDetailResSchema)
   findById(
     @Param() params: GetQuizParamsDTO,
     @ActiveUser('userId') userId: string,
