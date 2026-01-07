@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Trophy,
 } from "lucide-react";
+import { Pie, PieChart } from "recharts";
 
 import {
   DashboardPeriod,
@@ -44,6 +45,12 @@ import { SystemDeviceChart } from "@/components/dashboard/system-device-chart";
 import { CalendarDateRangePicker } from "@/components/shared/date-range-picker";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { cn } from "@/lib/utils";
+import { getAllCoursesBaseRole } from "@/services/course.service";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 // Student Dashboard Component
 function StudentDashboard() {
@@ -84,6 +91,12 @@ function StudentDashboard() {
     .filter((p) => !p.isCompleted)
     .sort((a, b) => b.progressPercentage - a.progressPercentage)
     .slice(0, 3);
+
+  // Pie chart data for student
+  const studentPieData = [
+    { name: "In Progress", value: inProgressCourses, fill: "#3b82f6" },
+    { name: "Completed", value: completedCourses, fill: "#10b981" },
+  ].filter(d => d.value > 0);
 
   if (isLoading) {
     return (
@@ -270,48 +283,317 @@ function StudentDashboard() {
         </Card>
       )}
 
-      {/* Quick Links */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Link href="/dashboard/my-learning">
-          <Card className="hover:shadow-md transition-all cursor-pointer group h-full">
-            <CardContent className="p-6 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
-                <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold group-hover:text-primary transition-colors">
-                  My Learning
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  View all your enrolled courses
-                </p>
-              </div>
+      {/* Charts Section */}
+      {totalCourses > 0 && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Course Status</CardTitle>
+              <p className="text-sm text-muted-foreground">Your enrolled courses</p>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer
+                config={{
+                  inProgress: { label: "In Progress", color: "#3b82f6" },
+                  completed: { label: "Completed", color: "#10b981" },
+                }}
+                className="mx-auto aspect-square max-h-[250px]"
+              >
+                <PieChart>
+                  <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                  <Pie
+                    data={studentPieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    label={({ name, value }) => `${name}: ${value}`}
+                  />
+                </PieChart>
+              </ChartContainer>
             </CardContent>
           </Card>
-        </Link>
-        <Link href="/dashboard/my-progress">
-          <Card className="hover:shadow-md transition-all cursor-pointer group h-full">
-            <CardContent className="p-6 flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
-                <Target className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold group-hover:text-primary transition-colors">
-                  My Progress
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Track your learning progress
-                </p>
-              </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Progress by Course</CardTitle>
+              <p className="text-sm text-muted-foreground">Your learning progress</p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {progress.slice(0, 4).map((p) => (
+                <div key={p.enrollmentId} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="truncate max-w-[200px]">{p.courseTitle}</span>
+                    <span className="text-muted-foreground">{p.progressPercentage}%</span>
+                  </div>
+                  <Progress value={p.progressPercentage} className="h-2" />
+                </div>
+              ))}
             </CardContent>
           </Card>
-        </Link>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// Admin/Instructor Dashboard Component
+// Instructor Dashboard Component
+function InstructorDashboard() {
+  const [courses, setCourses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<string>("30days");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await getAllCoursesBaseRole(1, 100);
+        setCourses(response.data || []);
+      } catch (error) {
+        console.error("Failed to fetch courses", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Filter courses based on period or date range
+  const filterByPeriod = (items: any[]) => {
+    if (dateRange?.from) {
+      const startDate = dateRange.from;
+      const endDate = dateRange.to || new Date();
+      return items.filter((item) => {
+        const itemDate = new Date(item.createdAt);
+        return itemDate >= startDate && itemDate <= endDate;
+      });
+    }
+    if (period === "all") return items;
+    const now = new Date();
+    let startDate: Date;
+    switch (period) {
+      case "today":
+        startDate = new Date(now.setHours(0, 0, 0, 0));
+        break;
+      case "7days":
+        startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case "30days":
+        startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case "90days":
+        startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case "year":
+        startDate = new Date(new Date().getFullYear(), 0, 1);
+        break;
+      default:
+        return items;
+    }
+    return items.filter((item) => new Date(item.createdAt) >= startDate);
+  };
+
+  const filteredCourses = filterByPeriod(courses);
+  const totalCourses = filteredCourses.length;
+  const publishedCourses = filteredCourses.filter((c) => c.status === "PUBLISHED").length;
+  const draftCourses = filteredCourses.filter((c) => c.status === "DRAFT").length;
+  const totalStudents = filteredCourses.reduce((sum, c) => sum + (c._count?.enrollments || 0), 0);
+
+  // Pie chart data for instructor
+  const instructorPieData = [
+    { name: "Published", value: publishedCourses, fill: "#10b981" },
+    { name: "Draft", value: draftCourses, fill: "#f59e0b" },
+  ].filter(d => d.value > 0);
+
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
+
+  return (
+    <div className="flex flex-col gap-4 p-4 lg:gap-6 lg:p-6 min-h-screen">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Instructor Dashboard</h1>
+          <p className="text-muted-foreground">Manage your courses and track student engagement.</p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+          <CalendarDateRangePicker
+            date={dateRange}
+            setDate={(range) => {
+              setDateRange(range);
+              if (range) setPeriod("");
+            }}
+            className="w-full sm:w-auto"
+          />
+          <Select
+            value={dateRange ? "" : period}
+            onValueChange={(val) => {
+              setPeriod(val);
+              setDateRange(undefined);
+            }}
+          >
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <SelectValue placeholder="Quick Filter" />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="7days">Last 7 Days</SelectItem>
+              <SelectItem value="30days">Last 30 Days</SelectItem>
+              <SelectItem value="90days">Last 3 Months</SelectItem>
+              <SelectItem value="year">This Year</SelectItem>
+              <SelectItem value="all">All Time</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Courses</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalCourses}</div>
+            <p className="text-xs text-muted-foreground">Your created courses</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
+            <GraduationCap className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{totalStudents}</div>
+            <p className="text-xs text-muted-foreground">Enrolled in your courses</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Published</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-emerald-600">{publishedCourses}</div>
+            <p className="text-xs text-muted-foreground">Live and available</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Drafts</CardTitle>
+            <Target className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-600">{draftCourses}</div>
+            <p className="text-xs text-muted-foreground">Work in progress</p>
+          </CardContent>
+        </Card>
+        <Link href="/dashboard/quizzes">
+          <Card className="hover:shadow-md transition-all cursor-pointer h-full">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Quizzes</CardTitle>
+              <Trophy className="h-4 w-4 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">→</div>
+              <p className="text-xs text-muted-foreground">View all quizzes</p>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      {/* Charts Section */}
+      {filteredCourses.length > 0 && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Course Status</CardTitle>
+              <p className="text-sm text-muted-foreground">Distribution of your courses by status</p>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer
+                config={{
+                  published: { label: "Published", color: "#10b981" },
+                  draft: { label: "Draft", color: "#f59e0b" },
+                }}
+                className="mx-auto aspect-square max-h-[250px]"
+              >
+                <PieChart>
+                  <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                  <Pie
+                    data={instructorPieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    label={({ name, value }) => `${name}: ${value}`}
+                  />
+                </PieChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Enrollments by Course</CardTitle>
+              <p className="text-sm text-muted-foreground">Student enrollments per course</p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {filteredCourses.slice(0, 4).map((c) => (
+                <div key={c.id} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="truncate max-w-[200px]">{c.title}</span>
+                    <span className="text-muted-foreground">{c._count?.enrollments || 0} students</span>
+                  </div>
+                  <Progress value={Math.min((c._count?.enrollments || 0) * 10, 100)} className="h-2" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Recent Courses */}
+      {filteredCourses.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Your Courses</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {filteredCourses.slice(0, 5).map((course) => (
+              <Link key={course.id} href={`/dashboard/courses/${course.id}`} className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors group">
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <GraduationCap className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium truncate group-hover:text-primary transition-colors">{course.title}</h3>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                    <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-medium", course.status === "PUBLISHED" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400")}>{course.status}</span>
+                    <span>{course.level}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+            {filteredCourses.length > 5 && (
+              <Link href="/dashboard/courses">
+                <Button variant="outline" className="w-full">View all {filteredCourses.length} courses</Button>
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// Admin Dashboard Component
 function AdminDashboard() {
   const [data, setData] = useState<FullAdminDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -427,6 +709,11 @@ export default function DashboardPage() {
     return <StudentDashboard />;
   }
 
-  // Show admin dashboard for Admin and Instructor
+  // Show instructor dashboard for instructors
+  if (userRole === "INSTRUCTOR") {
+    return <InstructorDashboard />;
+  }
+
+  // Show admin dashboard for Admin
   return <AdminDashboard />;
 }

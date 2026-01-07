@@ -578,7 +578,7 @@ export default function LearningPage({ params }: { params: Params }) {
                     )}
                     <div className="flex-1 text-left">
                       <p className="font-semibold text-sm whitespace-normal line-clamp-2">
-                        {chapterIndex + 1}. {chapter.title}
+                        {chapter.title}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {chapter.lessons.length} lessons
@@ -613,7 +613,7 @@ export default function LearningPage({ params }: { params: Params }) {
                               )}
                               <div className="flex-1 text-left">
                                 <p className="text-sm font-medium whitespace-normal line-clamp-2">
-                                  {lessonIndex + 1}. {lesson.title}
+                                  {lesson.title}
                                 </p>
                               </div>
                             </Button>
@@ -646,26 +646,6 @@ export default function LearningPage({ params }: { params: Params }) {
               {currentLesson?.title}
             </h2>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={markAsComplete}
-            disabled={
-              isMarkingComplete ||
-              (currentLesson ? completedLessons.has(currentLesson.id) : true)
-            }
-          >
-            {isMarkingComplete ? (
-              "Saving..."
-            ) : currentLesson && completedLessons.has(currentLesson.id) ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 mr-2 text-green-600 dark:text-green-400" />
-                Completed
-              </>
-            ) : (
-              "Mark as Complete"
-            )}
-          </Button>
         </div>
 
         {/* Video/Content Player */}
@@ -687,13 +667,33 @@ export default function LearningPage({ params }: { params: Params }) {
             Lesson {(currentLessonIndex || 0) + 1} of{" "}
             {currentChapter?.lessons.length || 0}
           </div>
-          <Button onClick={goToNextLesson} disabled={isLastLesson}>
-            Next
-            <ChevronRight className="h-4 w-4 ml-2" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={markAsComplete}
+              disabled={
+                isMarkingComplete ||
+                (currentLesson ? completedLessons.has(currentLesson.id) : true)
+              }
+            >
+              {isMarkingComplete ? (
+                "Saving..."
+              ) : currentLesson && completedLessons.has(currentLesson.id) ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2 text-green-600 dark:text-green-400" />
+                  Completed
+                </>
+              ) : (
+                "Mark as Complete"
+              )}
+            </Button>
+            <Button onClick={goToNextLesson} disabled={isLastLesson}>
+              Next
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
         </div>
       </div>
-      <AiTutorChat videoUrl={currentLesson?.videoUrl || undefined} />
     </div>
   );
 }

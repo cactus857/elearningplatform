@@ -1,6 +1,6 @@
 import { API_ENDPOINT } from "@/constants/endpoint";
 import api from "@/utils/api";
-import type { DateRange } from "react-day-picker"; 
+import type { DateRange } from "react-day-picker";
 export type DashboardPeriod = 'today' | '7days' | '30days' | '90days' | 'year' | 'all';
 
 export interface DashboardApiParams {
@@ -9,7 +9,7 @@ export interface DashboardApiParams {
 }
 
 function getApiParams(period: DashboardPeriod, customRange?: DateRange): DashboardApiParams {
-  
+
   if (customRange?.from && customRange?.to) {
     return {
       fromDate: customRange.from.toISOString(),
@@ -19,12 +19,12 @@ function getApiParams(period: DashboardPeriod, customRange?: DateRange): Dashboa
 
   const now = new Date();
   const from = new Date();
-  
+
   const toDate = now.toISOString();
 
   switch (period) {
     case 'today':
-      from.setHours(0, 0, 0, 0); 
+      from.setHours(0, 0, 0, 0);
       break;
     case '7days':
       from.setDate(now.getDate() - 7);
@@ -39,7 +39,7 @@ function getApiParams(period: DashboardPeriod, customRange?: DateRange): Dashboa
       from.setFullYear(now.getFullYear() - 1);
       break;
     case 'all':
-      return {}; 
+      return {};
     default:
       from.setDate(now.getDate() - 30);
   }
@@ -209,14 +209,14 @@ export interface FullAdminDashboardResponse {
  */
 export const getAdminDashboardFull = async (
   period: DashboardPeriod = '30days',
-  customRange?: DateRange 
+  customRange?: DateRange
 ): Promise<FullAdminDashboardResponse> => {
-  
+
   const params = getApiParams(period, customRange);
 
   const response = await api.get<FullAdminDashboardResponse>(
     `${API_ENDPOINT.DASHBOARD}/full`,
-    { params } 
+    { params }
   );
   return response.data;
 };

@@ -278,7 +278,7 @@ export default function LoginPage() {
             <div className="max-w-md">
               <h1 className="text-4xl font-bold leading-tight">
                 Welcome back! Level up your tech skills with{" "}
-                <span className="underline">Ucademy</span>
+                <span className="underline">KinnLMS</span>
               </h1>
               {/* Giảm độ sáng của text phụ một chút */}
               <p className="mt-4 text-lg opacity-80">

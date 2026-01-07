@@ -147,7 +147,7 @@ export default function ProfilePage() {
           </header>
 
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 max-w-md">
+            <TabsList className="grid w-full grid-cols-2 max-w-md">
               <TabsTrigger value="profile">
                 <User className="w-4 h-4 mr-2" />
                 Profile
@@ -155,10 +155,6 @@ export default function ProfilePage() {
               <TabsTrigger value="security">
                 <Lock className="w-4 h-4 mr-2" />
                 Security
-              </TabsTrigger>
-              <TabsTrigger value="notifications">
-                <Bell className="w-4 h-4 mr-2" />
-                Notifications
               </TabsTrigger>
             </TabsList>
 
@@ -347,21 +343,6 @@ export default function ProfilePage() {
                   </CardContent>
                 </Card>
               </div>
-            </TabsContent>
-
-            {/* Notifications Tab Content */}
-            <TabsContent value="notifications" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Notification Settings</CardTitle>
-                  <CardDescription>
-                    Manage how you receive notifications.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p>Notification settings content goes here...</p>
-                </CardContent>
-              </Card>
             </TabsContent>
           </Tabs>
         </div>

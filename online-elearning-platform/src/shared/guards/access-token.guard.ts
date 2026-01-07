@@ -87,10 +87,7 @@ const WHITELISTED_ROUTES = [
     path: '/ai/courses/refine',
     method: 'POST',
   },
-  {
-    path: '/ai/courses/save',
-    method: 'POST',
-  },
+  // Note: /ai/courses/save is NOT whitelisted because it needs role validation
 ]
 
 @Injectable()

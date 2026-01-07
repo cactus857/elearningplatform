@@ -168,16 +168,6 @@ const data = {
       url: "/dashboard/profile",
       icon: IconUserCircle,
     },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
   ],
 };
 
