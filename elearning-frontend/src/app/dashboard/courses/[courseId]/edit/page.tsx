@@ -37,7 +37,7 @@ export default async function EditCourse({ params }: { params: Params }) {
 
         <h1 className="text-3xl font-bold mb-8">
           Edit Course:{" "}
-          <span className="text-primary underline">{courseInfo.title}</span>
+          <span className="text-primary underline">{courseInfo.slug}</span>
         </h1>
       </div>
       <Tabs defaultValue="basic-info" className="w-full">
