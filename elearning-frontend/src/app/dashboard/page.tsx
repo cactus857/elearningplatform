@@ -397,10 +397,10 @@ function InstructorDashboard() {
   };
 
   const filteredCourses = filterByPeriod(courses);
-  const totalCourses = filteredCourses.length;
-  const publishedCourses = filteredCourses.filter((c) => c.status === "PUBLISHED").length;
-  const draftCourses = filteredCourses.filter((c) => c.status === "DRAFT").length;
-  const totalStudents = filteredCourses.reduce((sum, c) => sum + (c._count?.enrollments || 0), 0);
+  const totalCourses = courses.length;
+  const publishedCourses = courses.filter((c) => c.status === "PUBLISHED").length;
+  const draftCourses = courses.filter((c) => c.status === "DRAFT").length;
+  const totalStudents = courses.reduce((sum, c) => sum + (c._count?.enrollments || 0), 0);
 
   // Pie chart data for instructor
   const instructorPieData = [
