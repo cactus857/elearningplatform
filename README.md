@@ -125,9 +125,9 @@ npx prisma generate
 npm run start:dev
 
 # Terminal 2: Frontend
-"cd elearning-frontend
+cd elearning-frontend
 npm install
-npm run dev"
+npm run dev
 ```
 
 ---
